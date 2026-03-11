@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+:root {
+  --radius: 1rem;
+  --background: oklch(0.98 0.018 82.5);
+  --foreground: oklch(0.28 0.03 42);
+  --card: oklch(0.995 0.01 80);
+  --card-foreground: oklch(0.28 0.03 42);
+  --popover: oklch(0.995 0.01 80);
+  --popover-foreground: oklch(0.28 0.03 42);
+  --primary: oklch(0.68 0.18 42);
+  --primary-foreground: oklch(0.99 0.01 75);
+  --secondary: oklch(0.92 0.03 83);
+  --secondary-foreground: oklch(0.34 0.04 39);
+  --muted: oklch(0.94 0.02 84);
+  --muted-foreground: oklch(0.5 0.03 48);
+  --accent: oklch(0.88 0.06 96);
+  --accent-foreground: oklch(0.3 0.05 42);
+  --destructive: oklch(0.62 0.23 27);
+  --destructive-foreground: oklch(0.98 0.01 80);
+  --border: oklch(0.86 0.025 80);
+  --input: oklch(0.9 0.02 80);
+  --ring: oklch(0.68 0.18 42);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 8px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    background:
+      radial-gradient(circle at top, rgb(255 255 255 / 0.65), transparent 32%),
+      linear-gradient(180deg, #fff9ef 0%, #f8efe0 100%);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Avenir Next", "Segoe UI Variable", "PingFang SC", "Noto Sans SC", sans-serif;
+    overflow: hidden;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  }
+
+  .glass-panel {
+    background: rgb(255 253 249 / 0.88);
+    backdrop-filter: blur(18px);
+  }
+}
