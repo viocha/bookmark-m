@@ -7,11 +7,12 @@ export default defineConfig({
     baseIconPath: './assets/icon.svg',
   },
   manifest: {
-    name: 'Bookmark M',
-    description: '面向移动端触控体验的书签管理扩展，支持快速浏览、搜索、整理与编辑书签。',
+    name: '__MSG_extName__',
+    description: '__MSG_extDescription__',
+    default_locale: 'zh_CN',
     permissions: ['bookmarks', 'tabs', 'storage', 'favicon'],
     action: {
-      default_title: 'Open Bookmark M',
+      default_title: '__MSG_actionTitle__',
     },
   },
   vite: () => ({

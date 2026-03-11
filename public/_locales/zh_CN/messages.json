@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "Bookmark M"
+  },
+  "extDescription": {
+    "message": "面向移动端触控体验的书签管理扩展，支持快速浏览、搜索、整理与编辑书签。"
+  },
+  "actionTitle": {
+    "message": "打开 Bookmark M"
+  }
+}
