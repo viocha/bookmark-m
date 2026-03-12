@@ -7,9 +7,11 @@ import {
   getDisplayTitle,
   getFolderPath,
   getInitialFolderId,
+  getRecentFolders,
   moveNodes,
   normalizeUrl,
   updateBookmarkNode,
+  type RecentFolder,
   type FolderTreeNode,
   type InsertSettings,
   type LaunchContext,
@@ -31,6 +33,13 @@ type UseBookmarkEditorParams = {
   bookmarkComposer: BookmarkComposerState;
   setBookmarkComposer: Dispatch<SetStateAction<BookmarkComposerState>>;
   setLaunchBookmark: Dispatch<SetStateAction<chrome.bookmarks.BookmarkTreeNode | null>>;
+  setRecentFolders: Dispatch<SetStateAction<RecentFolder[]>>;
+  onFolderSaved?: (payload: {
+    mode: 'create' | 'edit';
+    source: 'page' | 'move-panel';
+    node: chrome.bookmarks.BookmarkTreeNode;
+    parentId: string;
+  }) => void;
   reload: (preferredFolderId?: string) => Promise<void>;
 };
 
@@ -47,9 +56,16 @@ export function useBookmarkEditor({
   bookmarkComposer,
   setBookmarkComposer,
   setLaunchBookmark,
+  setRecentFolders,
+  onFolderSaved,
   reload,
 }: UseBookmarkEditorParams) {
-  const openFolderComposer = useCallback((mode: 'create' | 'edit', parentId: string, node?: chrome.bookmarks.BookmarkTreeNode) => {
+  const openFolderComposer = useCallback((
+    mode: 'create' | 'edit',
+    parentId: string,
+    node?: chrome.bookmarks.BookmarkTreeNode,
+    source: 'page' | 'move-panel' = 'page',
+  ) => {
     setActionTarget(null);
     setFolderComposer({
       open: true,
@@ -57,6 +73,7 @@ export function useBookmarkEditor({
       parentId,
       targetId: node?.id,
       title: node ? getDisplayTitle(node) : '',
+      source,
     });
   }, [setActionTarget, setFolderComposer]);
 
@@ -75,12 +92,19 @@ export function useBookmarkEditor({
       targetId: node?.id,
       title: preset?.title ?? node?.title ?? '',
       url: preset?.url ?? node?.url ?? '',
+      recentOpen: false,
     });
-  }, [setActionTarget, setBookmarkComposer]);
+    void getRecentFolders().then((folders) => {
+      setRecentFolders(folders);
+    });
+  }, [setActionTarget, setBookmarkComposer, setRecentFolders]);
 
-  const saveLaunchTab = useCallback(async () => {
+  const saveLaunchTab = useCallback(async (preferredFolderId?: string, useRecentLocation = false) => {
     if (!launchContext?.url || !launchContext.title) return;
-    const targetFolderId = currentFolderId === HOME_FOLDER_ID ? await getInitialFolderId() : currentFolderId;
+    const recentFolderId = useRecentLocation ? (await getRecentFolders())[0]?.id : undefined;
+    const targetFolderId = preferredFolderId
+      ?? recentFolderId
+      ?? (useRecentLocation || currentFolderId === HOME_FOLDER_ID ? await getInitialFolderId() : currentFolderId);
     const existing = await chrome.bookmarks.search({ url: launchContext.url });
     const existingBookmark = existing.find((node) => !!node.url);
 
@@ -105,7 +129,8 @@ export function useBookmarkEditor({
       title: getDisplayTitle(node),
       url: node.url ?? '',
       path,
-      meta: node.url ? '书签' : getBookmarkMeta(node, folderChildCounts[node.id]),
+      kind: node.url ? '书签' : '文件夹',
+      meta: node.url ? '' : getBookmarkMeta(node, folderChildCounts[node.id]),
     });
   }, [folderChildCounts, setDetailState]);
 
@@ -116,17 +141,27 @@ export function useBookmarkEditor({
       return;
     }
 
+    let savedNode: chrome.bookmarks.BookmarkTreeNode | null = null;
     if (folderComposer.mode === 'create') {
-      await createFolder(folderComposer.parentId, title, insertSettingsState.folderPosition);
-      toast('文件夹已创建');
+      savedNode = await createFolder(folderComposer.parentId, title, insertSettingsState.folderPosition);
+      toast('文件夹已创建', { description: title });
     } else if (folderComposer.targetId) {
-      await updateBookmarkNode(folderComposer.targetId, { title });
-      toast('文件夹已更新');
+      savedNode = await updateBookmarkNode(folderComposer.targetId, { title });
+      toast('文件夹已更新', { description: title });
     }
 
-    setFolderComposer((state) => ({ ...state, open: false, title: '' }));
+    if (savedNode) {
+      onFolderSaved?.({
+        mode: folderComposer.mode,
+        source: folderComposer.source ?? 'page',
+        node: savedNode,
+        parentId: folderComposer.parentId,
+      });
+    }
+
+    setFolderComposer((state) => ({ ...state, open: false, title: '', source: 'page' }));
     await reload(currentFolderId);
-  }, [currentFolderId, folderComposer, insertSettingsState.folderPosition, reload, setFolderComposer]);
+  }, [currentFolderId, folderComposer, insertSettingsState.folderPosition, onFolderSaved, reload, setFolderComposer]);
 
   const submitBookmark = useCallback(async () => {
     const title = bookmarkComposer.title.trim();
@@ -140,20 +175,27 @@ export function useBookmarkEditor({
     let savedNode: chrome.bookmarks.BookmarkTreeNode | null = null;
     if (bookmarkComposer.mode === 'create') {
       savedNode = await createBookmark(bookmarkComposer.parentId, title, url, insertSettingsState.bookmarkPosition);
-      toast('书签已创建');
+      toast('书签已创建', { description: title });
     } else if (bookmarkComposer.targetId) {
       if (bookmarkComposer.parentId !== bookmarkComposer.originalParentId) {
         await moveNodes([bookmarkComposer.targetId], bookmarkComposer.parentId, insertSettingsState);
       }
       savedNode = await updateBookmarkNode(bookmarkComposer.targetId, { title, url });
-      toast('书签已更新');
+      toast('书签已更新', { description: title });
     }
 
     if (launchContext?.url === url && savedNode) {
       setLaunchBookmark({ ...savedNode, parentId: bookmarkComposer.parentId });
     }
 
-    setBookmarkComposer((state) => ({ ...state, open: false, title: '', url: '', originalParentId: state.parentId }));
+    setBookmarkComposer((state) => ({
+      ...state,
+      open: false,
+      title: '',
+      url: '',
+      originalParentId: state.parentId,
+      recentOpen: false,
+    }));
     await reload(currentFolderId);
   }, [bookmarkComposer, currentFolderId, insertSettingsState, launchContext, reload, setBookmarkComposer, setLaunchBookmark]);
 
@@ -161,6 +203,11 @@ export function useBookmarkEditor({
     () => findFolderPath(folderTree, bookmarkComposer.parentId) || (bookmarkComposer.parentId === HOME_FOLDER_ID ? '首页' : ''),
     [bookmarkComposer.parentId, folderTree],
   );
+  const bookmarkComposerFolderName = useMemo(() => {
+    if (!bookmarkComposerPath) return '';
+    const segments = bookmarkComposerPath.split(' / ').filter(Boolean);
+    return segments.at(-1) ?? bookmarkComposerPath;
+  }, [bookmarkComposerPath]);
 
   return {
     openFolderComposer,
@@ -170,5 +217,6 @@ export function useBookmarkEditor({
     submitFolder,
     submitBookmark,
     bookmarkComposerPath,
+    bookmarkComposerFolderName,
   };
 }

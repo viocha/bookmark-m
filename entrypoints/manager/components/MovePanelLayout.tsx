@@ -18,7 +18,7 @@ export function MovePanelLayout({ state, onClose, onSubmit, onQueryChange, child
   if (!state.open) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col bg-background/98 backdrop-blur">
+    <div className="fixed inset-0 z-[140] flex flex-col bg-background/98 backdrop-blur">
       <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
         <Button variant="outline" size="icon" className="size-8 rounded-full" onClick={onClose}>
           <X className="size-4" />
@@ -43,7 +43,7 @@ export function MovePanelLayout({ state, onClose, onSubmit, onQueryChange, child
         </div>
       </div>
 
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]]:overflow-visible">
         <div className="space-y-1 px-2 pb-4">{children}</div>
       </ScrollArea>
     </div>

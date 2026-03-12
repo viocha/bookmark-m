@@ -2,6 +2,7 @@ import { MoreHorizontal, RefreshCw, Search, X } from 'lucide-react';
 import type { RefObject } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 type ManagerHeaderProps = {
   pageTitle: string;
@@ -10,6 +11,7 @@ type ManagerHeaderProps = {
   searchQuery: string;
   searchInputRef: RefObject<HTMLInputElement | null>;
   toolsButtonRef: RefObject<HTMLButtonElement | null>;
+  toolsOpen: boolean;
   onSearchChange: (value: string) => void;
   onCloseSearch: () => void;
   onOpenSearch: () => void;
@@ -26,6 +28,7 @@ export function ManagerHeader({
   searchQuery,
   searchInputRef,
   toolsButtonRef,
+  toolsOpen,
   onSearchChange,
   onCloseSearch,
   onOpenSearch,
@@ -51,7 +54,7 @@ export function ManagerHeader({
               <button
                 type="button"
                 onClick={onCloseSearch}
-                className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+                className="inline-flex size-5 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground"
               >
                 <X className="size-3.5" />
               </button>
@@ -70,7 +73,13 @@ export function ManagerHeader({
             <RefreshCw className="size-4" />
           </Button>
 
-          <Button ref={toolsButtonRef} variant="outline" size="icon" className="size-8 rounded-full" onClick={onToggleTools}>
+          <Button
+            ref={toolsButtonRef}
+            variant="outline"
+            size="icon"
+            className={cn('size-8 rounded-full', toolsOpen && 'bg-muted/60 text-foreground')}
+            onClick={onToggleTools}
+          >
             <MoreHorizontal className="size-4" />
           </Button>
         </div>

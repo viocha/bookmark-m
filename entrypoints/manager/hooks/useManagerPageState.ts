@@ -7,6 +7,8 @@ import {
   type FolderTreeNode,
   type InsertSettings,
   type LaunchContext,
+  type RecentFolder,
+  type ViewSettings,
 } from '@/lib/bookmark-service';
 
 import type { BookmarkComposerState, DetailState, FolderComposerState, MoveState } from '../types';
@@ -36,6 +38,8 @@ export function useManagerPageState() {
   const [folderChildCounts, setFolderChildCounts] = useState<Record<string, number>>({});
   const [launchContext, setLaunchContextState] = useState<LaunchContext | null>(null);
   const [launchBookmark, setLaunchBookmark] = useState<chrome.bookmarks.BookmarkTreeNode | null>(null);
+  const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
+  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
@@ -43,12 +47,19 @@ export function useManagerPageState() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [actionTarget, setActionTarget] = useState<chrome.bookmarks.BookmarkTreeNode | null>(null);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<{ top: number; bottom: number; right: number } | null>(null);
+  const [toolsMenuAnchor, setToolsMenuAnchor] = useState<{ top: number; right: number } | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [displayMode, setDisplayModeState] = useState<BookmarkDisplayMode>('list');
   const [expandedTreeIds, setExpandedTreeIds] = useState<string[]>([]);
   const [insertSettingsState, setInsertSettingsState] = useState<InsertSettings>({
     folderPosition: 'bottom',
     bookmarkPosition: 'bottom',
+  });
+  const [viewSettingsState, setViewSettingsState] = useState<ViewSettings>({
+    listCompact: false,
+    treeCompact: true,
+    listBackNavigation: false,
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [normalizing, setNormalizing] = useState(false);
@@ -57,15 +68,18 @@ export function useManagerPageState() {
     title: '',
     url: '',
     path: '',
+    kind: '',
     meta: '',
   });
   const [expandedMoveFolderIds, setExpandedMoveFolderIds] = useState<string[]>([]);
   const [moveActionTarget, setMoveActionTarget] = useState<FolderTreeNode | null>(null);
+  const [moveMenuAnchor, setMoveMenuAnchor] = useState<{ top: number; bottom: number; right: number } | null>(null);
   const [folderComposer, setFolderComposer] = useState<FolderComposerState>({
     open: false,
     mode: 'create',
     parentId: '1',
     title: '',
+    source: 'page',
   });
   const [bookmarkComposer, setBookmarkComposer] = useState<BookmarkComposerState>({
     open: false,
@@ -74,6 +88,7 @@ export function useManagerPageState() {
     originalParentId: '1',
     title: '',
     url: '',
+    recentOpen: false,
   });
   const [moveState, setMoveState] = useState<MoveState>({
     open: false,
@@ -140,6 +155,10 @@ export function useManagerPageState() {
     setLaunchContextState,
     launchBookmark,
     setLaunchBookmark,
+    recentFolders,
+    setRecentFolders,
+    highlightedNodeId,
+    setHighlightedNodeId,
     searchQuery,
     setSearchQuery,
     searchOpen,
@@ -154,6 +173,10 @@ export function useManagerPageState() {
     setSelectedIds,
     actionTarget,
     setActionTarget,
+    actionMenuAnchor,
+    setActionMenuAnchor,
+    toolsMenuAnchor,
+    setToolsMenuAnchor,
     toolsOpen,
     setToolsOpen,
     displayMode,
@@ -162,6 +185,8 @@ export function useManagerPageState() {
     setExpandedTreeIds,
     insertSettingsState,
     setInsertSettingsState,
+    viewSettingsState,
+    setViewSettingsState,
     settingsOpen,
     setSettingsOpen,
     normalizing,
@@ -172,6 +197,8 @@ export function useManagerPageState() {
     setExpandedMoveFolderIds,
     moveActionTarget,
     setMoveActionTarget,
+    moveMenuAnchor,
+    setMoveMenuAnchor,
     folderComposer,
     setFolderComposer,
     bookmarkComposer,

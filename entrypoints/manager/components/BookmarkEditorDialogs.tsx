@@ -1,3 +1,4 @@
+import type { RecentFolder } from '@/lib/bookmark-service';
 import type { BookmarkComposerState, DetailState, FolderComposerState } from '../types';
 import { BookmarkComposerDialog } from './BookmarkComposerDialog';
 import { DetailsDialog } from './DetailsDialog';
@@ -9,9 +10,12 @@ type BookmarkEditorDialogsProps = {
   onFolderComposerTitleChange: (title: string) => void;
   onSubmitFolder: () => void;
   bookmarkComposer: BookmarkComposerState;
-  bookmarkComposerPath: string;
+  bookmarkComposerFolderName: string;
+  recentFolders: RecentFolder[];
   onBookmarkComposerOpenChange: (open: boolean) => void;
   onBookmarkComposerPickParent: () => void;
+  onBookmarkComposerToggleRecentFolders: () => void;
+  onBookmarkComposerPickRecentFolder: (folderId: string) => void;
   onBookmarkComposerTitleChange: (title: string) => void;
   onBookmarkComposerUrlChange: (url: string) => void;
   onBookmarkComposerRevealLocation: () => void;
@@ -27,9 +31,12 @@ export function BookmarkEditorDialogs({
   onFolderComposerTitleChange,
   onSubmitFolder,
   bookmarkComposer,
-  bookmarkComposerPath,
+  bookmarkComposerFolderName,
+  recentFolders,
   onBookmarkComposerOpenChange,
   onBookmarkComposerPickParent,
+  onBookmarkComposerToggleRecentFolders,
+  onBookmarkComposerPickRecentFolder,
   onBookmarkComposerTitleChange,
   onBookmarkComposerUrlChange,
   onBookmarkComposerRevealLocation,
@@ -49,9 +56,12 @@ export function BookmarkEditorDialogs({
 
       <BookmarkComposerDialog
         state={bookmarkComposer}
-        pathLabel={bookmarkComposerPath}
+        folderLabel={bookmarkComposerFolderName}
+        recentFolders={recentFolders}
         onOpenChange={onBookmarkComposerOpenChange}
         onPickParent={onBookmarkComposerPickParent}
+        onToggleRecentFolders={onBookmarkComposerToggleRecentFolders}
+        onPickRecentFolder={onBookmarkComposerPickRecentFolder}
         onTitleChange={onBookmarkComposerTitleChange}
         onUrlChange={onBookmarkComposerUrlChange}
         onRevealLocation={onBookmarkComposerRevealLocation}

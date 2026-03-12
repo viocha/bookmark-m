@@ -6,13 +6,11 @@ import {
   getDisplayTitle,
   getFolderChildren,
   getFolderPathNodes,
-  getInitialLocationId,
+  getInitialFolderId,
   getLaunchContext,
   getNode,
   getTreeRoots,
-  rememberFolder,
   setDisplayMode,
-  setLastLocationId,
   type BookmarkDisplayMode,
   type FolderTreeNode,
   type LaunchContext,
@@ -79,6 +77,15 @@ export function useNavigation({
   setErrorMessage,
   resetSelection,
 }: UseNavigationParams) {
+  const pruneListScrollPositions = useCallback((folderIds: string[]) => {
+    const keep = new Set(folderIds);
+    const nextPositions = Object.fromEntries(
+      Object.entries(scrollPositionsRef.current).filter(([key]) => key === TREE_SCROLL_KEY || keep.has(key)),
+    );
+    scrollPositionsRef.current = nextPositions;
+    persistScrollPositions();
+  }, [persistScrollPositions, scrollPositionsRef]);
+
   const getScrollViewport = useCallback(
     () => scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement | null,
     [scrollAreaRef],
@@ -106,7 +113,7 @@ export function useNavigation({
 
     try {
       const treeRoots = await safeCallWithTimeout(() => getTreeRoots(), []);
-      const rememberedId = await safeCallWithTimeout(() => getInitialLocationId(HOME_FOLDER_ID), '1');
+      const rememberedId = await safeCallWithTimeout(() => getInitialFolderId(), '1');
       const requestedId =
         preferredFolderId ?? (currentFolderIdRef.current === HOME_FOLDER_ID ? rememberedId : currentFolderIdRef.current) ?? rememberedId;
       const nextFolderChildCounts = collectFolderChildCounts(treeRoots);
@@ -123,14 +130,12 @@ export function useNavigation({
         setCurrentChildren(treeRoots);
         setFolderChildCounts(nextFolderChildCounts);
         setLaunchContextState(context);
-        void safeCall(() => setLastLocationId(HOME_FOLDER_ID), undefined);
+        pruneListScrollPositions([HOME_FOLDER_ID]);
       } else {
         const rootFallbackId = treeRoots[0]?.id ?? '1';
         const validatedId = await safeCallWithTimeout(() => ensureFolderId(requestedId), rootFallbackId);
         const nextFolderId =
           validatedId === '1' && !treeRoots.some((node) => node.id === '1') ? rootFallbackId : validatedId;
-
-        void safeCall(() => rememberFolder(nextFolderId), undefined);
 
         const [folderNode, folderPathNodes, folderChildren, context] = await Promise.all([
           safeCallWithTimeout(() => getNode(nextFolderId), null),
@@ -148,6 +153,7 @@ export function useNavigation({
         setCurrentChildren(folderChildren);
         setFolderChildCounts(nextFolderChildCounts);
         setLaunchContextState(context);
+        pruneListScrollPositions(folderPathNodes.map((node) => node.id));
       }
 
       const nextScrollKey = displayMode === 'tree' ? TREE_SCROLL_KEY : requestedId === HOME_FOLDER_ID ? HOME_FOLDER_ID : requestedId;
@@ -183,6 +189,7 @@ export function useNavigation({
     setLaunchContextState,
     setLoading,
     setRoots,
+    pruneListScrollPositions,
   ]);
 
   const goToFolder = useCallback(async (folderId: string) => {
@@ -205,7 +212,6 @@ export function useNavigation({
     resetSelection();
     setSearchQuery('');
     setSearchOpen(false);
-    await safeCall(() => setLastLocationId(HOME_FOLDER_ID), undefined);
     await reload(HOME_FOLDER_ID);
   }, [rememberViewportScroll, reload, resetSelection, setSearchOpen, setSearchQuery]);
 

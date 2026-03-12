@@ -9,8 +9,10 @@ type MovePanelProps = {
   filteredFolderTree: FolderTreeNode[];
   moveTreeExpandedIds: string[];
   moveActionTargetId?: string;
+  moveMenuAnchor: { top: number; bottom: number; right: number } | null;
   moveMenuDirection: 'up' | 'down';
   onMoveClose: () => void;
+  onCloseMoveActionMenu: () => void;
   onSubmitMove: () => void;
   onMoveQueryChange: (query: string) => void;
   onToggleMoveExpanded: (folderId: string) => void;
@@ -26,8 +28,10 @@ export function MovePanel({
   filteredFolderTree,
   moveTreeExpandedIds,
   moveActionTargetId,
+  moveMenuAnchor,
   moveMenuDirection,
   onMoveClose,
+  onCloseMoveActionMenu,
   onSubmitMove,
   onMoveQueryChange,
   onToggleMoveExpanded,
@@ -46,7 +50,9 @@ export function MovePanel({
           targetFolderId={moveState.targetFolderId}
           movingIds={moveState.ids}
           actionTargetId={moveActionTargetId}
+          menuAnchor={moveMenuAnchor}
           menuDirection={moveMenuDirection}
+          onCloseActionMenu={onCloseMoveActionMenu}
           onToggleExpanded={onToggleMoveExpanded}
           onSelectTarget={onMoveSelectTarget}
           onToggleActionMenu={onToggleMoveActionMenu}

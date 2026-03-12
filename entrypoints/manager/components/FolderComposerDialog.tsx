@@ -4,6 +4,13 @@ import { Input } from '@/components/ui/input';
 
 import type { FolderComposerState } from '../types';
 
+function selectInputText(input: HTMLInputElement) {
+  input.setSelectionRange(0, input.value.length);
+  window.requestAnimationFrame(() => {
+    input.scrollLeft = 0;
+  });
+}
+
 type FolderComposerDialogProps = {
   state: FolderComposerState;
   onOpenChange: (open: boolean) => void;
@@ -27,7 +34,13 @@ export function FolderComposerDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4 space-y-3">
-          <Input autoFocus value={state.title} onChange={(event) => onTitleChange(event.target.value)} placeholder="文件夹名称" />
+          <Input
+            autoFocus
+            value={state.title}
+            onFocus={(event) => selectInputText(event.currentTarget)}
+            onChange={(event) => onTitleChange(event.target.value)}
+            placeholder="文件夹名称"
+          />
           <Button className="h-10 w-full rounded-xl" onClick={onSubmit}>
             保存
           </Button>

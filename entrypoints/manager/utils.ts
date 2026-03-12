@@ -102,3 +102,32 @@ export function findFolderPath(nodes: FolderTreeNode[], id: string): string {
 export function getNodeDisplayTitle(node: chrome.bookmarks.BookmarkTreeNode) {
   return getDisplayTitle(node);
 }
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+export function getCompensatedMenuPosition({
+  anchorRight,
+  preferredTop,
+  menuWidth,
+  menuHeight,
+  viewportMargin = 0,
+}: {
+  anchorRight: number;
+  preferredTop: number;
+  menuWidth: number;
+  menuHeight: number;
+  viewportMargin?: number;
+}) {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const preferredLeft = viewportWidth - anchorRight - menuWidth;
+  const maxLeft = Math.max(viewportMargin, viewportWidth - viewportMargin - menuWidth);
+  const maxTop = Math.max(viewportMargin, viewportHeight - viewportMargin - menuHeight);
+
+  return {
+    left: clamp(preferredLeft, viewportMargin, maxLeft),
+    top: clamp(preferredTop, viewportMargin, maxTop),
+  };
+}

@@ -4,6 +4,7 @@ export type FolderComposerState = {
   parentId: string;
   targetId?: string;
   title: string;
+  source?: 'page' | 'move-panel';
 };
 
 export type BookmarkComposerState = {
@@ -14,6 +15,7 @@ export type BookmarkComposerState = {
   targetId?: string;
   title: string;
   url: string;
+  recentOpen: boolean;
 };
 
 export type MoveState = {
@@ -29,5 +31,6 @@ export type DetailState = {
   title: string;
   url: string;
   path: string;
+  kind: string;
   meta: string;
 };

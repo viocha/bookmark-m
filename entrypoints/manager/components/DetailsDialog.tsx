@@ -13,7 +13,7 @@ export function DetailsDialog({ state, onOpenChange }: DetailsDialogProps) {
       <DialogContent className="rounded-[1.5rem] p-4">
         <DialogHeader>
           <DialogTitle>查看详情</DialogTitle>
-          <DialogDescription>完整信息</DialogDescription>
+          <DialogDescription className="sr-only">查看书签或文件夹的详细信息。</DialogDescription>
         </DialogHeader>
         <div className="mt-4 space-y-3 text-xs leading-5 text-muted-foreground">
           <div className="space-y-1">
@@ -32,8 +32,14 @@ export function DetailsDialog({ state, onOpenChange }: DetailsDialogProps) {
           </div>
           <div className="space-y-1">
             <div className="text-[11px] uppercase tracking-wide">类型</div>
-            <div className="whitespace-pre-wrap break-all text-foreground">{state.meta}</div>
+            <div className="whitespace-pre-wrap break-all text-foreground">{state.kind}</div>
           </div>
+          {state.meta ? (
+            <div className="space-y-1">
+              <div className="text-[11px] uppercase tracking-wide">包含</div>
+              <div className="whitespace-pre-wrap break-all text-foreground">{state.meta}</div>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

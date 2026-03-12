@@ -21,7 +21,7 @@ export function PathBar({ visible, isHomeView, breadcrumbs, onGoHome, onGoToFold
           type="button"
           onClick={onGoHome}
           className={cn(
-            'inline-flex h-6 shrink-0 items-center justify-center rounded-full px-2 text-xs',
+            'inline-flex h-6 shrink-0 touch-manipulation items-center justify-center rounded-full px-2 text-xs',
             isHomeView ? 'bg-secondary font-semibold text-foreground' : 'bg-muted text-muted-foreground',
           )}
         >
@@ -33,7 +33,7 @@ export function PathBar({ visible, isHomeView, breadcrumbs, onGoHome, onGoToFold
             type="button"
             onClick={() => onGoToFolder(node.id)}
             className={cn(
-              'inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-xs',
+              'inline-flex h-6 shrink-0 touch-manipulation items-center rounded-full px-2.5 text-xs',
               index === breadcrumbs.length - 1 ? 'bg-secondary font-semibold' : 'bg-muted text-muted-foreground',
             )}
           >

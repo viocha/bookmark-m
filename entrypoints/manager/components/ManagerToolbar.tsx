@@ -1,7 +1,7 @@
 import { HeaderToolsMenu } from './HeaderToolsMenu';
 import { ManagerHeader } from './ManagerHeader';
 import { SelectionToolbar } from './SelectionToolbar';
-import type { BookmarkDisplayMode } from '@/lib/bookmark-service';
+import type { BookmarkDisplayMode, LaunchContext } from '@/lib/bookmark-service';
 
 type ManagerToolbarProps = {
   toolsMenuRef: React.RefObject<HTMLDivElement | null>;
@@ -15,11 +15,13 @@ type ManagerToolbarProps = {
   selectedCount: number;
   hasLaunchContext: boolean;
   hasLaunchBookmark: boolean;
+  launchContext: LaunchContext | null;
   toolsOpen: boolean;
   displayMode: BookmarkDisplayMode;
   toolsDisabledOnHome: boolean;
   selectableCount: number;
   canCreateInCurrentFolder: boolean;
+  toolsMenuAnchor: { top: number; right: number } | null;
   onSearchChange: (value: string) => void;
   onCloseSearch: () => void;
   onOpenSearch: () => void;
@@ -29,6 +31,7 @@ type ManagerToolbarProps = {
   onMoveSelected: () => void;
   onDeleteSelected: () => void;
   onCloseSelection: () => void;
+  onCloseTools: () => void;
   onSwitchMode: (mode: BookmarkDisplayMode) => void;
   onOpenSettings: () => void;
   onSaveLaunch: () => void;
@@ -49,11 +52,13 @@ export function ManagerToolbar({
   selectedCount,
   hasLaunchContext,
   hasLaunchBookmark,
+  launchContext,
   toolsOpen,
   displayMode,
   toolsDisabledOnHome,
   selectableCount,
   canCreateInCurrentFolder,
+  toolsMenuAnchor,
   onSearchChange,
   onCloseSearch,
   onOpenSearch,
@@ -63,6 +68,7 @@ export function ManagerToolbar({
   onMoveSelected,
   onDeleteSelected,
   onCloseSelection,
+  onCloseTools,
   onSwitchMode,
   onOpenSettings,
   onSaveLaunch,
@@ -79,6 +85,7 @@ export function ManagerToolbar({
         searchQuery={searchQuery}
         searchInputRef={searchInputRef}
         toolsButtonRef={toolsButtonRef}
+        toolsOpen={toolsOpen}
         onSearchChange={onSearchChange}
         onCloseSearch={onCloseSearch}
         onOpenSearch={onOpenSearch}
@@ -101,10 +108,13 @@ export function ManagerToolbar({
             displayMode={displayMode}
             hasLaunchContext={hasLaunchContext}
             hasLaunchBookmark={hasLaunchBookmark}
+            launchContext={launchContext}
             toolsDisabledOnHome={toolsDisabledOnHome}
             selectableCount={selectableCount}
             searching={Boolean(deferredSearch)}
             canCreateInCurrentFolder={canCreateInCurrentFolder}
+            menuAnchor={toolsMenuAnchor}
+            onClose={onCloseTools}
             onSwitchMode={onSwitchMode}
             onOpenSettings={onOpenSettings}
             onSaveLaunch={onSaveLaunch}

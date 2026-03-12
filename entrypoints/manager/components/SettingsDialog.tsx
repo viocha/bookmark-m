@@ -1,13 +1,15 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { InsertSettings } from '@/lib/bookmark-service';
+import type { InsertSettings, ViewSettings } from '@/lib/bookmark-service';
 
 type SettingsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   settings: InsertSettings;
+  viewSettings: ViewSettings;
   onChange: (settings: InsertSettings) => void;
+  onViewChange: (settings: ViewSettings) => void;
   normalizing: boolean;
   onNormalize: () => void;
 };
@@ -16,18 +18,82 @@ export function SettingsDialog({
   open,
   onOpenChange,
   settings,
+  viewSettings,
   onChange,
+  onViewChange,
   normalizing,
   onNormalize,
 }: SettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-[1.5rem] p-4">
+      <DialogContent aria-describedby={undefined} className="rounded-[1.5rem] p-4">
         <DialogHeader>
           <DialogTitle>全局设置</DialogTitle>
-          <DialogDescription>配置新建与移动时的插入位置，并可一键规范化所有文件夹。</DialogDescription>
         </DialogHeader>
         <div className="mt-4 space-y-4">
+          <div className="space-y-2">
+            <div className="text-sm font-medium">列表模式返回键</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: false, label: '关闭' },
+                { value: true, label: '逐层返回' },
+              ].map((option) => (
+                <button
+                  key={`list-back-navigation-${String(option.value)}`}
+                  type="button"
+                  onClick={() => onViewChange({ ...viewSettings, listBackNavigation: option.value })}
+                  className={cn(
+                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
+                    viewSettings.listBackNavigation === option.value && 'border-primary bg-primary/8 text-primary',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm font-medium">列表模式密度</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: false, label: '正常' },
+                { value: true, label: '紧凑' },
+              ].map((option) => (
+                <button
+                  key={`list-compact-${String(option.value)}`}
+                  type="button"
+                  onClick={() => onViewChange({ ...viewSettings, listCompact: option.value })}
+                  className={cn(
+                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
+                    viewSettings.listCompact === option.value && 'border-primary bg-primary/8 text-primary',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm font-medium">树形模式密度</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: false, label: '正常' },
+                { value: true, label: '紧凑' },
+              ].map((option) => (
+                <button
+                  key={`tree-compact-${String(option.value)}`}
+                  type="button"
+                  onClick={() => onViewChange({ ...viewSettings, treeCompact: option.value })}
+                  className={cn(
+                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
+                    viewSettings.treeCompact === option.value && 'border-primary bg-primary/8 text-primary',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-2">
             <div className="text-sm font-medium">文件夹插入位置</div>
             <div className="grid grid-cols-2 gap-2">

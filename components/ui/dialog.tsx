@@ -2,18 +2,46 @@ import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn, swallowNextDocumentClick } from '@/lib/utils';
 
-export const Dialog = DialogPrimitive.Root;
+const DialogCloseContext = React.createContext<(() => void) | null>(null);
+
+export function Dialog({
+  children,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  const handleClose = React.useCallback(() => {
+    onOpenChange?.(false);
+  }, [onOpenChange]);
+
+  return (
+    <DialogCloseContext.Provider value={handleClose}>
+      <DialogPrimitive.Root onOpenChange={onOpenChange} {...props}>
+        {children}
+      </DialogPrimitive.Root>
+    </DialogCloseContext.Provider>
+  );
+}
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogPortal = DialogPrimitive.Portal;
 export const DialogClose = DialogPrimitive.Close;
 
 export function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  const closeDialog = React.useContext(DialogCloseContext);
+
   return (
     <DialogPrimitive.Overlay
-      className={cn('fixed inset-0 z-50 bg-black/40 backdrop-blur-sm', className)}
       {...props}
+      className={cn('fixed inset-0 z-[260] bg-black/40 backdrop-blur-sm', className)}
+      onPointerDown={(event) => {
+        props.onPointerDown?.(event);
+        if (event.defaultPrevented) return;
+        event.preventDefault();
+        event.stopPropagation();
+        swallowNextDocumentClick();
+        closeDialog?.();
+      }}
     />
   );
 }
@@ -31,7 +59,7 @@ export function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 max-h-[85vh] w-[min(calc(100vw-1.5rem),32rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[1.5rem] border bg-card p-4 shadow-2xl outline-none',
+          'fixed left-1/2 top-1/2 z-[260] max-h-[85vh] w-[min(calc(100vw-1.5rem),32rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[1.5rem] border bg-card p-4 shadow-2xl outline-none',
           className,
         )}
         {...props}
