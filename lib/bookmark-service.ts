@@ -2,6 +2,9 @@ export const LAST_FOLDER_KEY = 'bookmark-m-last-folder';
 export const RECENT_FOLDER_KEY = 'bookmark-m-recent-folders';
 export const LAUNCH_CONTEXT_KEY = 'bookmark-m-launch-context';
 export const SCROLL_POSITIONS_KEY = 'bookmark-m-scroll-positions';
+export const DISPLAY_MODE_KEY = 'bookmark-m-display-mode';
+export const TREE_EXPANDED_KEY = 'bookmark-m-tree-expanded';
+export const INSERT_SETTINGS_KEY = 'bookmark-m-insert-settings';
 
 export interface LaunchContext {
   tabId?: number;
@@ -35,6 +38,14 @@ export interface FolderTreeNode {
 
 export interface DeletedBookmarkSnapshot {
   node: chrome.bookmarks.BookmarkTreeNode;
+}
+
+export type BookmarkDisplayMode = 'list' | 'tree';
+export type InsertPosition = 'top' | 'bottom';
+
+export interface InsertSettings {
+  folderPosition: InsertPosition;
+  bookmarkPosition: InsertPosition;
 }
 
 type BookmarkSearchInput = string | { query?: string; title?: string; url?: string };
@@ -258,6 +269,39 @@ export async function setSavedScrollPositions(positions: Record<string, number>)
   await storageSet('local', { [SCROLL_POSITIONS_KEY]: positions });
 }
 
+export async function getDisplayMode(): Promise<BookmarkDisplayMode> {
+  const stored = await storageGet<Record<string, unknown>>('local', DISPLAY_MODE_KEY);
+  return stored[DISPLAY_MODE_KEY] === 'tree' ? 'tree' : 'list';
+}
+
+export async function setDisplayMode(mode: BookmarkDisplayMode): Promise<void> {
+  await storageSet('local', { [DISPLAY_MODE_KEY]: mode });
+}
+
+export async function getTreeExpandedIds(): Promise<string[]> {
+  const stored = await storageGet<Record<string, unknown>>('local', TREE_EXPANDED_KEY);
+  const raw = stored[TREE_EXPANDED_KEY];
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((value): value is string => typeof value === 'string');
+}
+
+export async function setTreeExpandedIds(ids: string[]): Promise<void> {
+  await storageSet('local', { [TREE_EXPANDED_KEY]: ids });
+}
+
+export async function getInsertSettings(): Promise<InsertSettings> {
+  const stored = await storageGet<Record<string, unknown>>('local', INSERT_SETTINGS_KEY);
+  const raw = stored[INSERT_SETTINGS_KEY] as Partial<InsertSettings> | undefined;
+  return {
+    folderPosition: raw?.folderPosition === 'top' ? 'top' : 'bottom',
+    bookmarkPosition: raw?.bookmarkPosition === 'top' ? 'top' : 'bottom',
+  };
+}
+
+export async function setInsertSettings(settings: InsertSettings): Promise<void> {
+  await storageSet('local', { [INSERT_SETTINGS_KEY]: settings });
+}
+
 export async function rememberFolder(folderId: string) {
   const node = await getNode(folderId);
   if (!node || node.url) return;
@@ -369,26 +413,73 @@ export async function searchNodes(query: string) {
 }
 
 async function getFolderInsertIndex(parentId: string, position: 'top' | 'bottom' = 'bottom') {
+  await normalizeFolderChildren(parentId);
   const children = await bookmarksGetChildren(parentId);
   const folders = children.filter((node) => !node.url);
   return position === 'top' ? 0 : folders.length;
 }
 
 async function getBookmarkInsertIndex(parentId: string, position: 'top' | 'bottom' = 'bottom') {
+  await normalizeFolderChildren(parentId);
   const children = await bookmarksGetChildren(parentId);
   const folders = children.filter((node) => !node.url);
   if (position === 'top') return folders.length;
   return undefined;
 }
 
-export async function createFolder(parentId: string, title: string, position: 'top' | 'bottom' = 'bottom') {
+export async function normalizeFolderChildren(parentId: string): Promise<boolean> {
+  if (parentId === '0') return false;
+  const children = await bookmarksGetChildren(parentId);
+  const folders = children.filter((node) => !node.url);
+  const bookmarks = children.filter((node) => !!node.url);
+  const sorted = [...folders, ...bookmarks];
+  let current = [...children];
+  let changed = false;
+
+  for (let index = 0; index < sorted.length; index += 1) {
+    if (sorted[index].id !== current[index]?.id) {
+      await bookmarksMove(sorted[index].id, { parentId, index });
+      current = await bookmarksGetChildren(parentId);
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
+export async function normalizeAllFolders(): Promise<number> {
+  const tree = await bookmarksGetTree();
+  const roots = tree[0]?.children ?? [];
+  let changedCount = 0;
+
+  const visit = async (node: chrome.bookmarks.BookmarkTreeNode): Promise<void> => {
+    if (node.url) return;
+
+    if (await normalizeFolderChildren(node.id)) {
+      changedCount += 1;
+    }
+
+    const refreshedChildren = await bookmarksGetChildren(node.id);
+    for (const child of refreshedChildren.filter((item) => !item.url)) {
+      await visit(child);
+    }
+  };
+
+  for (const root of roots) {
+    await visit(root);
+  }
+
+  return changedCount;
+}
+
+export async function createFolder(parentId: string, title: string, position: InsertPosition = 'bottom') {
   const index = await getFolderInsertIndex(parentId, position);
   const folder = await bookmarksCreate({ parentId, title: title.trim(), index });
   await rememberFolder(folder.parentId ?? parentId);
   return folder;
 }
 
-export async function createBookmark(parentId: string, title: string, url: string, position: 'top' | 'bottom' = 'bottom') {
+export async function createBookmark(parentId: string, title: string, url: string, position: InsertPosition = 'bottom') {
   const normalizedUrl = normalizeUrl(url);
   const index = await getBookmarkInsertIndex(parentId, position);
   const bookmark = await bookmarksCreate({
@@ -464,27 +555,50 @@ export async function restoreDeletedNodes(snapshots: DeletedBookmarkSnapshot[]) 
   }
 }
 
-export async function moveNodes(ids: string[], targetFolderId: string) {
+export async function moveNodes(ids: string[], targetFolderId: string, settings?: Partial<InsertSettings>) {
   const nodes = (
     await Promise.all(ids.map(async (id) => getNode(id)))
   ).filter((node): node is chrome.bookmarks.BookmarkTreeNode => Boolean(node && !isProtectedNode(node.id)));
 
   const folders = nodes.filter((node) => !node.url);
   const bookmarks = nodes.filter((node) => !!node.url);
+  const folderPosition = settings?.folderPosition === 'top' ? 'top' : 'bottom';
+  const bookmarkPosition = settings?.bookmarkPosition === 'top' ? 'top' : 'bottom';
 
-  let folderIndex = await getFolderInsertIndex(targetFolderId, 'bottom');
+  let folderIndex = await getFolderInsertIndex(targetFolderId, folderPosition);
 
   for (const node of folders) {
     await bookmarksMove(node.id, { parentId: targetFolderId, index: folderIndex });
     folderIndex += 1;
   }
 
+  await normalizeFolderChildren(targetFolderId);
   for (const node of bookmarks) {
-    const index = await getBookmarkInsertIndex(targetFolderId, 'bottom');
+    const index = await getBookmarkInsertIndex(targetFolderId, bookmarkPosition);
     await bookmarksMove(node.id, { parentId: targetFolderId, index });
   }
 
+  await normalizeFolderChildren(targetFolderId);
   await rememberFolder(targetFolderId);
+}
+
+export async function getNodeUrls(id: string): Promise<string[]> {
+  const [subtree] = await bookmarksGetSubTree(id);
+  if (!subtree) return [];
+
+  const urls: string[] = [];
+  const visit = (node: chrome.bookmarks.BookmarkTreeNode) => {
+    if (node.url) {
+      urls.push(node.url);
+      return;
+    }
+    for (const child of node.children ?? []) {
+      visit(child);
+    }
+  };
+
+  visit(subtree);
+  return urls;
 }
 
 export async function getLaunchContext() {
