@@ -1,8 +1,7 @@
-import { MoreHorizontal, RefreshCw, Search, X } from 'lucide-react';
+import { RefreshCw, Search, X } from 'lucide-react';
 import type { RefObject } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 type ManagerHeaderProps = {
   pageTitle: string;
@@ -10,13 +9,10 @@ type ManagerHeaderProps = {
   deferredSearch: string;
   searchQuery: string;
   searchInputRef: RefObject<HTMLInputElement | null>;
-  toolsButtonRef: RefObject<HTMLButtonElement | null>;
-  toolsOpen: boolean;
   onSearchChange: (value: string) => void;
   onCloseSearch: () => void;
   onOpenSearch: () => void;
   onReload: () => void;
-  onToggleTools: () => void;
   selectionToolbar?: React.ReactNode;
   toolsMenu?: React.ReactNode;
 };
@@ -27,13 +23,10 @@ export function ManagerHeader({
   deferredSearch,
   searchQuery,
   searchInputRef,
-  toolsButtonRef,
-  toolsOpen,
   onSearchChange,
   onCloseSearch,
   onOpenSearch,
   onReload,
-  onToggleTools,
   selectionToolbar,
   toolsMenu,
 }: ManagerHeaderProps) {
@@ -73,21 +66,11 @@ export function ManagerHeader({
             <RefreshCw className="size-4" />
           </Button>
 
-          <Button
-            ref={toolsButtonRef}
-            variant="outline"
-            size="icon"
-            className={cn('size-8 rounded-full', toolsOpen && 'bg-muted/60 text-foreground')}
-            onClick={onToggleTools}
-          >
-            <MoreHorizontal className="size-4" />
-          </Button>
+          {toolsMenu}
         </div>
 
         {selectionToolbar}
       </div>
-
-      {toolsMenu}
     </header>
   );
 }

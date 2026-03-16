@@ -12,15 +12,10 @@ type BookmarkTreeViewProps = {
   selectedIds: string[];
   selectionMode: boolean;
   compact: boolean;
-  actionTargetId?: string;
-  actionMenuAnchor: { top: number; bottom: number; right: number } | null;
-  actionMenuDirection: 'up' | 'down';
-  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean) => React.ReactNode;
-  onCloseActionMenu: () => void;
+  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => React.ReactNode;
   onToggleFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onToggleSelect: (id: string) => void;
-  onToggleActionMenu: (node: chrome.bookmarks.BookmarkTreeNode, button: HTMLElement) => void;
   dragEnabled: boolean;
   highlightedNodeId?: string | null;
 };
@@ -31,15 +26,10 @@ type SortableTreeRowProps = {
   selectedIds: string[];
   selectionMode: boolean;
   compact: boolean;
-  actionTargetId?: string;
-  actionMenuAnchor: { top: number; bottom: number; right: number } | null;
-  actionMenuDirection: 'up' | 'down';
-  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean) => React.ReactNode;
-  onCloseActionMenu: () => void;
+  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => React.ReactNode;
   onToggleFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onToggleSelect: (id: string) => void;
-  onToggleActionMenu: (node: chrome.bookmarks.BookmarkTreeNode, button: HTMLElement) => void;
   expanded: boolean;
   dragEnabled: boolean;
   highlightedNodeId?: string | null;
@@ -51,15 +41,10 @@ function SortableTreeRow({
   selectedIds,
   selectionMode,
   compact,
-  actionTargetId,
-  actionMenuAnchor,
-  actionMenuDirection,
   renderItemMenu,
-  onCloseActionMenu,
   onToggleFolder,
   onOpenNode,
   onToggleSelect,
-  onToggleActionMenu,
   expanded,
   dragEnabled,
   highlightedNodeId,
@@ -82,11 +67,7 @@ function SortableTreeRow({
       compactTree={compact}
       longPressMenu={false}
       expanded={expanded}
-      menuOpen={actionTargetId === node.id}
-      menuAnchor={actionTargetId === node.id ? actionMenuAnchor : null}
-      menuDirection={actionMenuDirection}
-      menuContent={renderItemMenu(node, compact)}
-      onCloseMenu={onCloseActionMenu}
+      menuContent={(closeMenu) => renderItemMenu(node, compact, closeMenu)}
       highlighted={highlightedNodeId === node.id}
       onToggleExpand={folder ? () => onToggleFolder(node.id) : undefined}
       onClick={() => {
@@ -103,7 +84,6 @@ function SortableTreeRow({
         }
         onOpenNode(node);
       }}
-      onAction={(button) => onToggleActionMenu(node, button)}
       wrapperRef={setNodeRef}
       wrapperStyle={{
         transform: CSS.Transform.toString(transform),
@@ -123,15 +103,10 @@ export function BookmarkTreeView({
   selectedIds,
   selectionMode,
   compact,
-  actionTargetId,
-  actionMenuAnchor,
-  actionMenuDirection,
   renderItemMenu,
-  onCloseActionMenu,
   onToggleFolder,
   onOpenNode,
   onToggleSelect,
-  onToggleActionMenu,
   dragEnabled,
   highlightedNodeId,
 }: BookmarkTreeViewProps) {
@@ -153,15 +128,10 @@ export function BookmarkTreeView({
               selectionMode={selectionMode}
               compact={compact}
               expanded={expanded}
-              actionTargetId={actionTargetId}
-              actionMenuAnchor={actionMenuAnchor}
-              actionMenuDirection={actionMenuDirection}
               renderItemMenu={renderItemMenu}
-              onCloseActionMenu={onCloseActionMenu}
               onToggleFolder={onToggleFolder}
               onOpenNode={onOpenNode}
               onToggleSelect={onToggleSelect}
-              onToggleActionMenu={onToggleActionMenu}
               dragEnabled={dragEnabled}
               highlightedNodeId={highlightedNodeId}
             />

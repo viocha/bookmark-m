@@ -34,14 +34,9 @@ type SortableListRowProps = {
   selectionMode: boolean;
   searchPath?: string;
   compact: boolean;
-  menuOpen: boolean;
-  menuAnchor: { top: number; bottom: number; right: number } | null;
-  menuDirection: 'up' | 'down';
-  menuContent: React.ReactNode;
-  onCloseMenu: () => void;
+  menuContent: (closeMenu: () => void) => React.ReactNode;
   highlighted: boolean;
   onClick: () => void;
-  onAction: (button: HTMLElement) => void;
   dragEnabled: boolean;
 };
 
@@ -52,14 +47,9 @@ function SortableListRow({
   selectionMode,
   searchPath,
   compact,
-  menuOpen,
-  menuAnchor,
-  menuDirection,
   menuContent,
-  onCloseMenu,
   highlighted,
   onClick,
-  onAction,
   dragEnabled,
 }: SortableListRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -79,14 +69,9 @@ function SortableListRow({
       compactTree={false}
       longPressMenu={false}
       expanded={false}
-      menuOpen={menuOpen}
-      menuAnchor={menuAnchor}
-      menuDirection={menuDirection}
       menuContent={menuContent}
-      onCloseMenu={onCloseMenu}
       highlighted={highlighted}
       onClick={onClick}
-      onAction={onAction}
       wrapperRef={setNodeRef}
       wrapperStyle={{
         transform: CSS.Transform.toString(transform),
@@ -192,17 +177,12 @@ type ManagerContentProps = {
   searchPaths: Record<string, string>;
   listCompact: boolean;
   treeCompact: boolean;
-  actionTargetId?: string;
-  actionMenuAnchor: { top: number; bottom: number; right: number } | null;
-  actionMenuDirection: 'up' | 'down';
   expandedTreeIds: string[];
   highlightedNodeId?: string | null;
-  getItemMenuContent: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean) => React.ReactNode;
-  onCloseActionMenu: () => void;
+  getItemMenuContent: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => React.ReactNode;
   onToggleTreeFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onToggleSelect: (id: string) => void;
-  onToggleActionMenu: (node: chrome.bookmarks.BookmarkTreeNode, button: HTMLElement) => void;
   onReorderCurrentListItem: (nodeId: string, insertIndex: number, parentId?: string) => void;
 };
 
@@ -225,17 +205,12 @@ export function ManagerContent({
   searchPaths,
   listCompact,
   treeCompact,
-  actionTargetId,
-  actionMenuAnchor,
-  actionMenuDirection,
   expandedTreeIds,
   highlightedNodeId,
   getItemMenuContent,
-  onCloseActionMenu,
   onToggleTreeFolder,
   onOpenNode,
   onToggleSelect,
-  onToggleActionMenu,
   onReorderCurrentListItem,
 }: ManagerContentProps) {
   const isTreeMode = displayMode === 'tree' && !deferredSearch;
@@ -374,15 +349,10 @@ export function ManagerContent({
                     selectedIds={selectedIds}
                     selectionMode={selectionMode}
                     compact={treeCompact}
-                    actionTargetId={actionTargetId}
-                    actionMenuAnchor={actionMenuAnchor}
-                    actionMenuDirection={actionMenuDirection}
                     renderItemMenu={getItemMenuContent}
-                    onCloseActionMenu={onCloseActionMenu}
                     onToggleFolder={onToggleTreeFolder}
                     onOpenNode={onOpenNode}
                     onToggleSelect={onToggleSelect}
-                    onToggleActionMenu={onToggleActionMenu}
                     dragEnabled={canDragTreeReorder}
                     highlightedNodeId={highlightedNodeId}
                   />
@@ -398,11 +368,7 @@ export function ManagerContent({
                           selectionMode={selectionMode}
                           searchPath={deferredSearch ? searchPaths[node.id] : undefined}
                           compact={listCompact}
-                          menuOpen={actionTargetId === node.id}
-                          menuAnchor={actionTargetId === node.id ? actionMenuAnchor : null}
-                          menuDirection={actionMenuDirection}
-                          menuContent={getItemMenuContent(node, listCompact)}
-                          onCloseMenu={onCloseActionMenu}
+                          menuContent={(closeMenu) => getItemMenuContent(node, listCompact, closeMenu)}
                           highlighted={highlightedNodeId === node.id}
                           onClick={() => {
                             if (suppressClickRef.current === node.id) return;
@@ -412,7 +378,6 @@ export function ManagerContent({
                             }
                             onOpenNode(node);
                           }}
-                          onAction={(button) => onToggleActionMenu(node, button)}
                           dragEnabled={canDragReorder}
                         />
                       ))}
@@ -433,11 +398,8 @@ export function ManagerContent({
                         compactTree={isTreeMode && treeCompact}
                         longPressMenu={false}
                         expanded={Boolean(!activeDragNode.url && expandedTreeIds.includes(activeDragNode.id))}
-                        menuOpen={false}
-                        menuDirection="down"
                         highlighted={false}
                         onClick={() => {}}
-                        onAction={() => {}}
                       />
                     </div>
                   ) : null}

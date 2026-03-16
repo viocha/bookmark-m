@@ -8,16 +8,11 @@ type MovePanelProps = {
   moveState: MoveState;
   filteredFolderTree: FolderTreeNode[];
   moveTreeExpandedIds: string[];
-  moveActionTargetId?: string;
-  moveMenuAnchor: { top: number; bottom: number; right: number } | null;
-  moveMenuDirection: 'up' | 'down';
   onMoveClose: () => void;
-  onCloseMoveActionMenu: () => void;
   onSubmitMove: () => void;
   onMoveQueryChange: (query: string) => void;
   onToggleMoveExpanded: (folderId: string) => void;
   onMoveSelectTarget: (folder: FolderTreeNode) => void;
-  onToggleMoveActionMenu: (folder: FolderTreeNode, button: HTMLElement) => void;
   onMoveCreateFolder: (folder: FolderTreeNode) => void;
   onMoveRenameFolder: (folder: FolderTreeNode) => void;
   onMoveDeleteFolder: (folder: FolderTreeNode) => void;
@@ -27,16 +22,11 @@ export function MovePanel({
   moveState,
   filteredFolderTree,
   moveTreeExpandedIds,
-  moveActionTargetId,
-  moveMenuAnchor,
-  moveMenuDirection,
   onMoveClose,
-  onCloseMoveActionMenu,
   onSubmitMove,
   onMoveQueryChange,
   onToggleMoveExpanded,
   onMoveSelectTarget,
-  onToggleMoveActionMenu,
   onMoveCreateFolder,
   onMoveRenameFolder,
   onMoveDeleteFolder,
@@ -49,13 +39,8 @@ export function MovePanel({
           expandedIds={moveTreeExpandedIds}
           targetFolderId={moveState.targetFolderId}
           movingIds={moveState.ids}
-          actionTargetId={moveActionTargetId}
-          menuAnchor={moveMenuAnchor}
-          menuDirection={moveMenuDirection}
-          onCloseActionMenu={onCloseMoveActionMenu}
           onToggleExpanded={onToggleMoveExpanded}
           onSelectTarget={onMoveSelectTarget}
-          onToggleActionMenu={onToggleMoveActionMenu}
           onCreateFolder={onMoveCreateFolder}
           onRenameFolder={onMoveRenameFolder}
           onDeleteFolder={onMoveDeleteFolder}

@@ -10,28 +10,23 @@ type ManagerToolbarProps = {
   deferredSearch: string;
   searchQuery: string;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
-  toolsButtonRef: React.RefObject<HTMLButtonElement | null>;
   selectionMode: boolean;
   selectedCount: number;
   hasLaunchContext: boolean;
   hasLaunchBookmark: boolean;
   launchContext: LaunchContext | null;
-  toolsOpen: boolean;
   displayMode: BookmarkDisplayMode;
   toolsDisabledOnHome: boolean;
   selectableCount: number;
   canCreateInCurrentFolder: boolean;
-  toolsMenuAnchor: { top: number; right: number } | null;
   onSearchChange: (value: string) => void;
   onCloseSearch: () => void;
   onOpenSearch: () => void;
   onReload: () => void;
-  onToggleTools: () => void;
   onOpenSelected: () => void;
   onMoveSelected: () => void;
   onDeleteSelected: () => void;
   onCloseSelection: () => void;
-  onCloseTools: () => void;
   onSwitchMode: (mode: BookmarkDisplayMode) => void;
   onOpenSettings: () => void;
   onSaveLaunch: () => void;
@@ -47,28 +42,23 @@ export function ManagerToolbar({
   deferredSearch,
   searchQuery,
   searchInputRef,
-  toolsButtonRef,
   selectionMode,
   selectedCount,
   hasLaunchContext,
   hasLaunchBookmark,
   launchContext,
-  toolsOpen,
   displayMode,
   toolsDisabledOnHome,
   selectableCount,
   canCreateInCurrentFolder,
-  toolsMenuAnchor,
   onSearchChange,
   onCloseSearch,
   onOpenSearch,
   onReload,
-  onToggleTools,
   onOpenSelected,
   onMoveSelected,
   onDeleteSelected,
   onCloseSelection,
-  onCloseTools,
   onSwitchMode,
   onOpenSettings,
   onSaveLaunch,
@@ -84,13 +74,10 @@ export function ManagerToolbar({
         deferredSearch={deferredSearch}
         searchQuery={searchQuery}
         searchInputRef={searchInputRef}
-        toolsButtonRef={toolsButtonRef}
-        toolsOpen={toolsOpen}
         onSearchChange={onSearchChange}
         onCloseSearch={onCloseSearch}
         onOpenSearch={onOpenSearch}
         onReload={onReload}
-        onToggleTools={onToggleTools}
         selectionToolbar={
           selectionMode ? (
             <SelectionToolbar
@@ -104,7 +91,6 @@ export function ManagerToolbar({
         }
         toolsMenu={
           <HeaderToolsMenu
-            open={toolsOpen}
             displayMode={displayMode}
             hasLaunchContext={hasLaunchContext}
             hasLaunchBookmark={hasLaunchBookmark}
@@ -113,8 +99,6 @@ export function ManagerToolbar({
             selectableCount={selectableCount}
             searching={Boolean(deferredSearch)}
             canCreateInCurrentFolder={canCreateInCurrentFolder}
-            menuAnchor={toolsMenuAnchor}
-            onClose={onCloseTools}
             onSwitchMode={onSwitchMode}
             onOpenSettings={onOpenSettings}
             onSaveLaunch={onSaveLaunch}

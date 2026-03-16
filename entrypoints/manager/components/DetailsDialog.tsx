@@ -15,7 +15,7 @@ export function DetailsDialog({ state, onOpenChange }: DetailsDialogProps) {
           <DialogTitle>查看详情</DialogTitle>
           <DialogDescription className="sr-only">查看书签或文件夹的详细信息。</DialogDescription>
         </DialogHeader>
-        <div className="mt-4 space-y-3 text-xs leading-5 text-muted-foreground">
+        <div className="space-y-3 text-xs leading-5 text-muted-foreground">
           <div className="space-y-1">
             <div className="text-[11px] uppercase tracking-wide">名称</div>
             <div className="whitespace-pre-wrap break-all text-foreground">{state.title || '未命名'}</div>

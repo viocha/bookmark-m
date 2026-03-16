@@ -18,8 +18,6 @@ type UseMoveParams = {
   insertSettingsState: InsertSettings;
   setBookmarkComposer: Dispatch<SetStateAction<BookmarkComposerState>>;
   setMoveActionTarget: Dispatch<SetStateAction<FolderTreeNode | null>>;
-  setMoveMenuDirection: Dispatch<SetStateAction<'up' | 'down'>>;
-  setMoveMenuAnchor: Dispatch<SetStateAction<{ top: number; bottom: number; right: number } | null>>;
   resetSelection: () => void;
   reload: (preferredFolderId?: string) => Promise<void>;
 };
@@ -36,8 +34,6 @@ export function useMove({
   insertSettingsState,
   setBookmarkComposer,
   setMoveActionTarget,
-  setMoveMenuDirection,
-  setMoveMenuAnchor,
   resetSelection,
   reload,
 }: UseMoveParams) {
@@ -83,23 +79,9 @@ export function useMove({
     setExpandedMoveFolderIds((prev) => (prev.includes(folderId) ? prev.filter((id) => id !== folderId) : [...prev, folderId]));
   }, [setExpandedMoveFolderIds]);
 
-  const toggleMoveActionMenu = useCallback((folder: FolderTreeNode, button: HTMLElement) => {
-    const rect = button.getBoundingClientRect();
-    setMoveMenuDirection(window.innerHeight - rect.bottom < 180 ? 'up' : 'down');
-    setMoveActionTarget((current) => {
-      if (current?.id === folder.id) {
-        setMoveMenuAnchor(null);
-        return null;
-      }
-
-      setMoveMenuAnchor({
-        top: rect.bottom + 4,
-        bottom: window.innerHeight - rect.top + 4,
-        right: window.innerWidth - rect.right,
-      });
-      return folder;
-    });
-  }, [setMoveActionTarget, setMoveMenuAnchor, setMoveMenuDirection]);
+  const toggleMoveActionMenu = useCallback((folder: FolderTreeNode) => {
+    setMoveActionTarget(folder);
+  }, [setMoveActionTarget]);
 
   return {
     openMoveDialog,

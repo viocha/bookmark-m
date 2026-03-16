@@ -20,12 +20,9 @@ export function useManagerPageState() {
   const scrollPositionsRef = useRef<Record<string, number>>({});
   const scrollPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toolsMenuRef = useRef<HTMLDivElement | null>(null);
-  const toolsButtonRef = useRef<HTMLButtonElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const currentFolderIdRef = useRef(HOME_FOLDER_ID);
 
-  const [actionMenuDirection, setActionMenuDirection] = useState<'up' | 'down'>('down');
-  const [moveMenuDirection, setMoveMenuDirection] = useState<'up' | 'down'>('down');
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,8 +44,6 @@ export function useManagerPageState() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [actionTarget, setActionTarget] = useState<chrome.bookmarks.BookmarkTreeNode | null>(null);
-  const [actionMenuAnchor, setActionMenuAnchor] = useState<{ top: number; bottom: number; right: number } | null>(null);
-  const [toolsMenuAnchor, setToolsMenuAnchor] = useState<{ top: number; right: number } | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [displayMode, setDisplayModeState] = useState<BookmarkDisplayMode>('list');
   const [expandedTreeIds, setExpandedTreeIds] = useState<string[]>([]);
@@ -73,7 +68,6 @@ export function useManagerPageState() {
   });
   const [expandedMoveFolderIds, setExpandedMoveFolderIds] = useState<string[]>([]);
   const [moveActionTarget, setMoveActionTarget] = useState<FolderTreeNode | null>(null);
-  const [moveMenuAnchor, setMoveMenuAnchor] = useState<{ top: number; bottom: number; right: number } | null>(null);
   const [folderComposer, setFolderComposer] = useState<FolderComposerState>({
     open: false,
     mode: 'create',
@@ -124,13 +118,8 @@ export function useManagerPageState() {
     scrollPositionsRef,
     scrollPersistTimerRef,
     toolsMenuRef,
-    toolsButtonRef,
     searchInputRef,
     currentFolderIdRef,
-    actionMenuDirection,
-    setActionMenuDirection,
-    moveMenuDirection,
-    setMoveMenuDirection,
     loading,
     setLoading,
     searching,
@@ -173,10 +162,6 @@ export function useManagerPageState() {
     setSelectedIds,
     actionTarget,
     setActionTarget,
-    actionMenuAnchor,
-    setActionMenuAnchor,
-    toolsMenuAnchor,
-    setToolsMenuAnchor,
     toolsOpen,
     setToolsOpen,
     displayMode,
@@ -197,8 +182,6 @@ export function useManagerPageState() {
     setExpandedMoveFolderIds,
     moveActionTarget,
     setMoveActionTarget,
-    moveMenuAnchor,
-    setMoveMenuAnchor,
     folderComposer,
     setFolderComposer,
     bookmarkComposer,

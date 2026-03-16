@@ -1,24 +1,18 @@
-import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, Folder, FolderPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { isProtectedNode, type FolderTreeNode } from '@/lib/bookmark-service';
-import { cn, swallowNextDocumentClick } from '@/lib/utils';
-import { getCompensatedMenuPosition } from '../utils';
+import { cn } from '@/lib/utils';
+import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
 
 type MoveFolderTreeProps = {
   nodes: FolderTreeNode[];
   expandedIds: string[];
   targetFolderId: string;
   movingIds: string[];
-  actionTargetId?: string;
-  menuAnchor: { top: number; bottom: number; right: number } | null;
-  menuDirection: 'up' | 'down';
-  onCloseActionMenu: () => void;
   onToggleExpanded: (folderId: string) => void;
   onSelectTarget: (folder: FolderTreeNode) => void;
-  onToggleActionMenu: (folder: FolderTreeNode, button: HTMLElement) => void;
   onCreateFolder: (folder: FolderTreeNode) => void;
   onRenameFolder: (folder: FolderTreeNode) => void;
   onDeleteFolder: (folder: FolderTreeNode) => void;
@@ -29,41 +23,19 @@ export function MoveFolderTree({
   expandedIds,
   targetFolderId,
   movingIds,
-  actionTargetId,
-  menuAnchor,
-  menuDirection,
-  onCloseActionMenu,
   onToggleExpanded,
   onSelectTarget,
-  onToggleActionMenu,
   onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
 }: MoveFolderTreeProps) {
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [menuStyle, setMenuStyle] = useState<CSSProperties | null>(null);
-
-  useLayoutEffect(() => {
-    if (!actionTargetId || !menuAnchor || !menuRef.current) {
-      setMenuStyle(null);
-      return;
-    }
-
-    const rect = menuRef.current.getBoundingClientRect();
-    const preferredTop = menuDirection === 'down'
-      ? menuAnchor.top
-      : window.innerHeight - menuAnchor.bottom - rect.height;
-
-    setMenuStyle({
-      ...getCompensatedMenuPosition({
-        anchorRight: menuAnchor.right,
-        preferredTop,
-        menuWidth: rect.width,
-        menuHeight: rect.height,
-      }),
-      visibility: 'visible',
-    });
-  }, [actionTargetId, menuAnchor, menuDirection]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const closeMenu = useCallback(() => {
+    setOpenMenuId(null);
+  }, []);
+  useImmediateMenuDismiss({ open: openMenuId !== null, onClose: closeMenu, triggerRef, contentRef });
 
   const renderNodes = (treeNodes: FolderTreeNode[]): React.ReactNode =>
     treeNodes.map((folder) => {
@@ -121,70 +93,65 @@ export function MoveFolderTree({
               </div>
             </button>
             <div className="absolute right-1 top-1/2 -translate-y-1/2" data-move-item-menu>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onToggleActionMenu(folder, event.currentTarget);
-                }}
-                className={cn(
-                  'flex size-7 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground',
-                  actionTargetId === folder.id && 'bg-muted text-foreground',
-                )}
+              <DropdownMenu
+                open={openMenuId === folder.id}
+                onOpenChange={(open) => setOpenMenuId(open ? folder.id : null)}
               >
-                <MoreHorizontal className="size-4" />
-              </button>
-              {actionTargetId === folder.id ? (
-                menuAnchor ? createPortal(
-                  <>
-                    <div
-                      className="fixed inset-0 z-[210]"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        swallowNextDocumentClick();
-                        onCloseActionMenu();
+                <DropdownMenuTrigger asChild>
+                  <button
+                    ref={openMenuId === folder.id ? triggerRef : undefined}
+                    type="button"
+                    className={cn(
+                      'flex size-7 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]',
+                      openMenuId === folder.id && 'bg-muted text-foreground',
+                    )}
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  ref={openMenuId === folder.id ? contentRef : undefined}
+                  align="end"
+                  collisionPadding={8}
+                  className="w-32 rounded-2xl p-1"
+                >
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      closeMenu();
+                      onCreateFolder(folder);
+                    }}
+                    className="h-8 rounded-xl px-2.5 text-xs font-medium"
+                  >
+                    <FolderPlus className="size-4" />
+                    新建文件夹
+                  </DropdownMenuItem>
+                  {!isProtectedNode(folder.id) ? (
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        closeMenu();
+                        onRenameFolder(folder);
                       }}
-                    />
-                    <div
-                      ref={menuRef}
-                      data-move-item-menu
-                      className="fixed z-[220] w-32 rounded-2xl border bg-white p-1 shadow-xl"
-                      style={menuStyle ?? { left: -9999, top: -9999, visibility: 'hidden' }}
+                      className="h-8 rounded-xl px-2.5 text-xs font-medium"
                     >
-                      <button
-                        type="button"
-                        onClick={() => onCreateFolder(folder)}
-                        className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium"
-                      >
-                        <FolderPlus className="size-4" />
-                        新建文件夹
-                      </button>
-                      {!isProtectedNode(folder.id) ? (
-                        <button
-                          type="button"
-                          onClick={() => onRenameFolder(folder)}
-                          className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium"
-                        >
-                          <Pencil className="size-4" />
-                          重命名
-                        </button>
-                      ) : null}
-                      {!isProtectedNode(folder.id) ? (
-                        <button
-                          type="button"
-                          onClick={() => onDeleteFolder(folder)}
-                          className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium text-destructive"
-                        >
-                          <Trash2 className="size-4" />
-                          删除
-                        </button>
-                      ) : null}
-                    </div>
-                  </>,
-                  document.body,
-                ) : null
-              ) : null}
+                      <Pencil className="size-4" />
+                      重命名
+                    </DropdownMenuItem>
+                  ) : null}
+                  {!isProtectedNode(folder.id) ? (
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        closeMenu();
+                        onDeleteFolder(folder);
+                      }}
+                      variant="destructive"
+                      className="h-8 rounded-xl px-2.5 text-xs font-medium"
+                    >
+                      <Trash2 className="size-4" />
+                      删除
+                    </DropdownMenuItem>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           {expanded && folder.children.length > 0 ? renderNodes(folder.children) : null}

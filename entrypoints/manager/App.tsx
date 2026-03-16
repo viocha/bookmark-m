@@ -100,7 +100,6 @@ export default function App() {
       if (source !== 'move-panel') return;
 
       state.setMoveActionTarget(null);
-      state.setMoveMenuAnchor(null);
       state.setExpandedMoveFolderIds((prev) => Array.from(new Set([...prev, parentId])));
       if (mode === 'create') {
         state.setMoveState((current) => ({ ...current, targetFolderId: node.id }));
@@ -121,8 +120,6 @@ export default function App() {
     insertSettingsState: state.insertSettingsState,
     setBookmarkComposer: state.setBookmarkComposer,
     setMoveActionTarget: state.setMoveActionTarget,
-    setMoveMenuDirection: state.setMoveMenuDirection,
-    setMoveMenuAnchor: state.setMoveMenuAnchor,
     resetSelection,
     reload: navigation.reload,
   });
@@ -252,24 +249,6 @@ export default function App() {
     state.setSearchQuery,
   ]);
 
-  const toggleActionMenu = useCallback((node: chrome.bookmarks.BookmarkTreeNode, button: HTMLElement) => {
-    const rect = button.getBoundingClientRect();
-    state.setActionMenuDirection(window.innerHeight - rect.bottom < 220 ? 'up' : 'down');
-    state.setActionTarget((current) => {
-      if (current?.id === node.id) {
-        state.setActionMenuAnchor(null);
-        return null;
-      }
-
-      state.setActionMenuAnchor({
-        top: rect.bottom + 4,
-        bottom: window.innerHeight - rect.top + 4,
-        right: window.innerWidth - rect.right,
-      });
-      return node;
-    });
-  }, [state.setActionMenuAnchor, state.setActionMenuDirection, state.setActionTarget]);
-
   const collectFolderDescendantIds = useCallback((node: chrome.bookmarks.BookmarkTreeNode): string[] => {
     if (node.url) return [];
 
@@ -282,7 +261,7 @@ export default function App() {
     return ids;
   }, []);
 
-  const getItemMenuContent = useCallback((node: chrome.bookmarks.BookmarkTreeNode, compact: boolean) => (
+  const getItemMenuContent = useCallback((node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => (
     <ItemMenuContent
       node={node}
       deferredSearch={Boolean(state.deferredSearch)}
@@ -291,17 +270,14 @@ export default function App() {
       compact={compact}
       hasLaunchContext={Boolean(state.launchContext)}
       hasLaunchBookmark={Boolean(state.launchBookmark)}
-      onClose={() => {
-        state.setActionTarget(null);
-        state.setActionMenuAnchor(null);
-      }}
+      onClose={closeMenu}
       onShowLocation={(targetNode) => {
         if (state.displayMode === 'tree') {
+          closeMenu();
           void revealNodeInTree(targetNode);
           return;
         }
-        state.setActionTarget(null);
-        state.setActionMenuAnchor(null);
+        closeMenu();
         if (targetNode.parentId) {
           state.setSearchQuery('');
           state.setSearchOpen(false);
@@ -360,8 +336,6 @@ export default function App() {
     state.displayMode,
     state.launchBookmark,
     state.launchContext,
-    state.setActionTarget,
-    state.setActionMenuAnchor,
     state.setHighlightedNodeId,
     state.setSearchOpen,
     state.setSearchQuery,
@@ -551,38 +525,6 @@ export default function App() {
   }, [state.searchOpen, state.searchInputRef]);
 
   useEffect(() => {
-    if (!state.actionTarget) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('[data-item-menu]')) return;
-      state.setActionTarget(null);
-      state.setActionMenuAnchor(null);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-    };
-  }, [state.actionTarget, state.setActionMenuAnchor, state.setActionTarget]);
-
-  useEffect(() => {
-    if (!state.moveActionTarget) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('[data-move-item-menu]')) return;
-      state.setMoveActionTarget(null);
-      state.setMoveMenuAnchor(null);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-    };
-  }, [state.moveActionTarget, state.setMoveActionTarget, state.setMoveMenuAnchor]);
-
-  useEffect(() => {
     if (!state.moveState.open || state.folderTree.length === 0) return;
     state.setExpandedMoveFolderIds((prev) => Array.from(new Set([...prev, ...state.folderTree.map((node) => node.id)])));
   }, [state.folderTree, state.moveState.open, state.setExpandedMoveFolderIds]);
@@ -706,21 +648,18 @@ export default function App() {
         deferredSearch={state.deferredSearch}
         searchQuery={state.searchQuery}
         searchInputRef={state.searchInputRef}
-        toolsButtonRef={state.toolsButtonRef}
         selectionMode={state.selectionMode}
         selectedCount={state.selectedIds.length}
         hasLaunchContext={Boolean(state.launchContext)}
         hasLaunchBookmark={Boolean(state.launchBookmark)}
-      launchContext={state.launchContext}
-      toolsOpen={state.toolsOpen}
-      displayMode={state.displayMode}
-      toolsDisabledOnHome={navigation.toolsDisabledOnHome}
-      selectableCount={selectableNodes.length}
-      canCreateInCurrentFolder={navigation.canCreateInCurrentFolder}
-      toolsMenuAnchor={state.toolsMenuAnchor}
-      onSearchChange={(value) => {
-        state.setSearchQuery(value);
-        resetSelection();
+        launchContext={state.launchContext}
+        displayMode={state.displayMode}
+        toolsDisabledOnHome={navigation.toolsDisabledOnHome}
+        selectableCount={selectableNodes.length}
+        canCreateInCurrentFolder={navigation.canCreateInCurrentFolder}
+        onSearchChange={(value) => {
+          state.setSearchQuery(value);
+          resetSelection();
         }}
         onCloseSearch={() => {
           state.setSearchQuery('');
@@ -728,54 +667,24 @@ export default function App() {
         }}
         onOpenSearch={() => state.setSearchOpen(true)}
         onReload={() => void navigation.reload(state.currentFolderId)}
-        onToggleTools={() => {
-          if (state.toolsOpen) {
-            state.setToolsOpen(false);
-            state.setToolsMenuAnchor(null);
-            return;
-          }
-
-          const rect = state.toolsButtonRef.current?.getBoundingClientRect();
-          if (!rect) return;
-
-          state.setToolsMenuAnchor({
-            top: rect.bottom + 4,
-            right: window.innerWidth - rect.right,
-          });
-          state.setToolsOpen(true);
-        }}
         onOpenSelected={() => void openNodeUrls(state.selectedIds)}
         onMoveSelected={() => state.selectedIds.length > 0 && move.openMoveDialog(state.selectedIds)}
         onDeleteSelected={() => state.selectedIds.length > 0 && void askDelete(state.selectedIds)}
         onCloseSelection={resetSelection}
-        onCloseTools={() => {
-          state.setToolsOpen(false);
-          state.setToolsMenuAnchor(null);
-        }}
         onSwitchMode={navigation.switchDisplayMode}
         onOpenSettings={() => {
-          state.setToolsOpen(false);
-          state.setToolsMenuAnchor(null);
           state.setSettingsOpen(true);
         }}
         onSaveLaunch={() => {
-          state.setToolsOpen(false);
-          state.setToolsMenuAnchor(null);
           void editor.saveLaunchTab(undefined, state.displayMode === 'tree');
         }}
         onSelectMode={() => {
-          state.setToolsOpen(false);
-          state.setToolsMenuAnchor(null);
           state.setSelectionMode(true);
         }}
         onCreateFolder={() => {
-          state.setToolsOpen(false);
-          state.setToolsMenuAnchor(null);
           editor.openFolderComposer('create', state.currentFolderId);
         }}
         onCreateBookmark={() => {
-          state.setToolsOpen(false);
-          state.setToolsMenuAnchor(null);
           editor.openBookmarkComposer('create', state.currentFolderId);
         }}
       />
@@ -803,22 +712,14 @@ export default function App() {
         searchPaths={state.searchPaths}
         listCompact={state.viewSettingsState.listCompact}
         treeCompact={state.viewSettingsState.treeCompact}
-        actionTargetId={state.actionTarget?.id}
-        actionMenuAnchor={state.actionMenuAnchor}
-        actionMenuDirection={state.actionMenuDirection}
         expandedTreeIds={state.expandedTreeIds}
         highlightedNodeId={state.highlightedNodeId}
         getItemMenuContent={getItemMenuContent}
-        onCloseActionMenu={() => {
-          state.setActionTarget(null);
-          state.setActionMenuAnchor(null);
-        }}
         onToggleTreeFolder={navigation.toggleTreeExpanded}
         onOpenNode={(node) => {
           void navigation.openNode(node);
         }}
         onToggleSelect={toggleSelect}
-        onToggleActionMenu={toggleActionMenu}
         onReorderCurrentListItem={(nodeId, insertIndex, parentId) => {
           if (state.deferredSearch) return;
 
@@ -886,45 +787,29 @@ export default function App() {
         moveState={state.moveState}
         filteredFolderTree={move.filteredFolderTree}
         moveTreeExpandedIds={move.moveTreeExpandedIds}
-        moveActionTargetId={state.moveActionTarget?.id}
-        moveMenuAnchor={state.moveMenuAnchor}
-        moveMenuDirection={state.moveMenuDirection}
         onMoveClose={() => {
           if (state.moveState.mode === 'pick-bookmark-parent') {
             state.setBookmarkComposer((current) => ({ ...current, open: true }));
           }
           state.setMoveState((current) => ({ ...current, open: false, mode: 'move', query: '' }));
         }}
-        onCloseMoveActionMenu={() => {
-          state.setMoveActionTarget(null);
-          state.setMoveMenuAnchor(null);
-        }}
         onSubmitMove={() => void move.submitMove()}
         onMoveQueryChange={(query) => state.setMoveState((current) => ({ ...current, query }))}
         onToggleMoveExpanded={move.toggleMoveFolderExpanded}
         onMoveSelectTarget={(folder) => {
-          state.setMoveActionTarget(null);
-          state.setMoveMenuAnchor(null);
           state.setMoveState((current) => ({ ...current, targetFolderId: folder.id }));
           if (folder.children.length > 0) {
             move.toggleMoveFolderExpanded(folder.id);
           }
         }}
-        onToggleMoveActionMenu={move.toggleMoveActionMenu}
         onMoveCreateFolder={(folder) => {
-          state.setMoveActionTarget(null);
-          state.setMoveMenuAnchor(null);
           state.setExpandedMoveFolderIds((prev) => Array.from(new Set([...prev, folder.id])));
           editor.openFolderComposer('create', folder.id, undefined, 'move-panel');
         }}
         onMoveRenameFolder={(folder) => {
-          state.setMoveActionTarget(null);
-          state.setMoveMenuAnchor(null);
           editor.openFolderComposer('edit', folder.id, { id: folder.id, title: folder.title } as chrome.bookmarks.BookmarkTreeNode, 'move-panel');
         }}
         onMoveDeleteFolder={(folder) => {
-          state.setMoveActionTarget(null);
-          state.setMoveMenuAnchor(null);
           void askDelete([folder.id]);
         }}
       />

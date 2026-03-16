@@ -1,14 +1,13 @@
-import { createPortal } from 'react-dom';
-import { Bookmark, FolderPlus, Plus, Settings2, SquareCheckBig } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { Bookmark, FolderPlus, MoreHorizontal, Plus, Settings2, SquareCheckBig } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 
-import { cn, swallowNextDocumentClick } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 import type { BookmarkDisplayMode, LaunchContext } from '@/lib/bookmark-service';
-import { getCompensatedMenuPosition } from '../utils';
+import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
 
 type HeaderToolsMenuProps = {
-  open: boolean;
   displayMode: BookmarkDisplayMode;
   hasLaunchContext: boolean;
   hasLaunchBookmark: boolean;
@@ -17,8 +16,6 @@ type HeaderToolsMenuProps = {
   selectableCount: number;
   searching: boolean;
   canCreateInCurrentFolder: boolean;
-  menuAnchor: { top: number; right: number } | null;
-  onClose: () => void;
   onSwitchMode: (mode: BookmarkDisplayMode) => void;
   onOpenSettings: () => void;
   onSaveLaunch: () => void;
@@ -28,7 +25,6 @@ type HeaderToolsMenuProps = {
 };
 
 export function HeaderToolsMenu({
-  open,
   displayMode,
   hasLaunchContext,
   hasLaunchBookmark,
@@ -37,8 +33,6 @@ export function HeaderToolsMenu({
   selectableCount,
   searching,
   canCreateInCurrentFolder,
-  menuAnchor,
-  onClose,
   onSwitchMode,
   onOpenSettings,
   onSaveLaunch,
@@ -46,52 +40,41 @@ export function HeaderToolsMenu({
   onCreateFolder,
   onCreateBookmark,
 }: HeaderToolsMenuProps) {
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [menuStyle, setMenuStyle] = useState<CSSProperties | null>(null);
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+  }, []);
+  useImmediateMenuDismiss({ open, onClose: closeMenu, triggerRef, contentRef });
 
-  useLayoutEffect(() => {
-    if (!open || !menuAnchor || !menuRef.current) {
-      setMenuStyle(null);
-      return;
-    }
-
-    const rect = menuRef.current.getBoundingClientRect();
-    setMenuStyle({
-      ...getCompensatedMenuPosition({
-        anchorRight: menuAnchor.right,
-        preferredTop: menuAnchor.top,
-        menuWidth: rect.width,
-        menuHeight: rect.height,
-      }),
-      visibility: 'visible',
-    });
-  }, [menuAnchor, open]);
-
-  if (!open || !menuAnchor) return null;
-
-  return createPortal(
-    <>
-      <div
-        className="fixed inset-0 z-[85]"
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          swallowNextDocumentClick();
-          onClose();
-        }}
-      />
-      <div
-        ref={menuRef}
-        data-tools-menu
-        className="fixed z-[90] w-56 rounded-2xl border bg-white p-1 shadow-xl"
-        style={menuStyle ?? { left: -9999, top: -9999, visibility: 'hidden' }}
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          ref={triggerRef}
+          variant="outline"
+          size="icon"
+          className={cn('size-8 rounded-full', open && 'bg-muted/60 text-foreground')}
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        ref={contentRef}
+        align="end"
+        sideOffset={8}
+        className="z-[90] w-56 rounded-2xl p-1 shadow-xl"
       >
         <div className="mb-1 grid grid-cols-2 gap-1">
           <button
             type="button"
-            onClick={() => onSwitchMode('list')}
+            onClick={() => {
+              closeMenu();
+              onSwitchMode('list');
+            }}
             className={cn(
-              'flex h-8 touch-manipulation items-center justify-center rounded-xl text-xs font-medium transition-colors',
+              'flex h-8 touch-manipulation items-center justify-center rounded-xl text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
               displayMode === 'list' ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground',
             )}
           >
@@ -99,9 +82,12 @@ export function HeaderToolsMenu({
           </button>
           <button
             type="button"
-            onClick={() => onSwitchMode('tree')}
+            onClick={() => {
+              closeMenu();
+              onSwitchMode('tree');
+            }}
             className={cn(
-              'flex h-8 touch-manipulation items-center justify-center rounded-xl text-xs font-medium transition-colors',
+              'flex h-8 touch-manipulation items-center justify-center rounded-xl text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
               displayMode === 'tree' ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground',
             )}
           >
@@ -109,60 +95,70 @@ export function HeaderToolsMenu({
           </button>
         </div>
         {hasLaunchContext ? (
-          <button
-            type="button"
+          <DropdownMenuItem
             disabled={displayMode === 'list' ? toolsDisabledOnHome : false}
-            onClick={onSaveLaunch}
-            className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium disabled:opacity-50"
+            onSelect={() => {
+              closeMenu();
+              onSaveLaunch();
+            }}
+            className="h-8 rounded-xl px-2.5 text-xs font-medium"
           >
             <Bookmark className="size-4" />
             {hasLaunchBookmark ? '编辑当前页面' : '添加当前页面'}
-          </button>
+          </DropdownMenuItem>
         ) : null}
-        <button
-          type="button"
-          onClick={onCreateFolder}
+        <DropdownMenuItem
           disabled={displayMode === 'tree' || toolsDisabledOnHome || !canCreateInCurrentFolder}
-          className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium disabled:opacity-50"
+          onSelect={() => {
+            closeMenu();
+            onCreateFolder();
+          }}
+          className="h-8 rounded-xl px-2.5 text-xs font-medium"
         >
           <FolderPlus className="size-4" />
           新建文件夹
-        </button>
-        <button
-          type="button"
-          onClick={onCreateBookmark}
+        </DropdownMenuItem>
+        <DropdownMenuItem
           disabled={displayMode === 'tree' || toolsDisabledOnHome || !canCreateInCurrentFolder}
-          className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium disabled:opacity-50"
+          onSelect={() => {
+            closeMenu();
+            onCreateBookmark();
+          }}
+          className="h-8 rounded-xl px-2.5 text-xs font-medium"
         >
           <Plus className="size-4" />
           添加书签
-        </button>
-        <button
-          type="button"
-          onClick={onSelectMode}
+        </DropdownMenuItem>
+        <DropdownMenuItem
           disabled={toolsDisabledOnHome || selectableCount === 0 || searching}
-          className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium disabled:opacity-50"
+          onSelect={() => {
+            closeMenu();
+            onSelectMode();
+          }}
+          className="h-8 rounded-xl px-2.5 text-xs font-medium"
         >
           <SquareCheckBig className="size-4" />
           选择项目
-        </button>
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="flex h-8 w-full touch-manipulation items-center gap-1.5 rounded-xl px-2.5 text-left text-xs font-medium"
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => {
+            closeMenu();
+            onOpenSettings();
+          }}
+          className="h-8 rounded-xl px-2.5 text-xs font-medium"
         >
           <Settings2 className="size-4" />
           全局设置
-        </button>
+        </DropdownMenuItem>
+        {launchContext ? <DropdownMenuSeparator className="mx-1 my-1" /> : null}
         {launchContext ? (
-          <div className="mt-1 border-t border-border/60 px-2.5 pt-1.5">
+          <div className="px-2.5 pb-1 pt-0.5">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">当前页面</div>
             <div className="mt-0.5 truncate text-xs font-medium">{launchContext.title}</div>
             <div className="truncate text-[11px] text-muted-foreground">{launchContext.url}</div>
           </div>
         ) : null}
-      </div>
-    </>,
-    document.body,
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

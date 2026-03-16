@@ -3,6 +3,7 @@ import { ChevronRight, History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useAnimatedOpenState } from '@/hooks/useAnimatedOpenState';
 import type { RecentFolder } from '@/lib/bookmark-service';
 
 import type { BookmarkComposerState } from '../types';
@@ -43,6 +44,8 @@ export function BookmarkComposerDialog({
   onDelete,
   onSubmit,
 }: BookmarkComposerDialogProps) {
+  const { present: recentPresent, state: recentState } = useAnimatedOpenState(state.recentOpen);
+
   return (
     <Dialog open={state.open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-[1.5rem] p-4">
@@ -77,8 +80,11 @@ export function BookmarkComposerDialog({
               <History className="size-4 text-muted-foreground" />
             </button>
           </div>
-          {state.recentOpen ? (
-            <div className="overflow-hidden rounded-xl border bg-muted/10">
+          {recentPresent ? (
+            <div
+              data-state={recentState}
+              className="overflow-hidden rounded-xl border bg-muted/10 duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
+            >
               {recentFolders.length > 0 ? (
                 <div className="max-h-52 overflow-y-auto">
                   <div className="divide-y">

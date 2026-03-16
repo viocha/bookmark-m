@@ -5,20 +5,21 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex touch-manipulation select-none items-center justify-center gap-2 rounded-full text-sm font-semibold transition-colors active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+  "inline-flex shrink-0 touch-manipulation select-none items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-[color,box-shadow,transform] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-[0_12px_32px_-18px_rgb(221_109_54_/_0.95)]',
-        secondary: 'bg-secondary text-secondary-foreground',
-        outline: 'border border-border bg-card text-foreground',
-        ghost: 'text-foreground',
-        destructive: 'bg-destructive text-destructive-foreground',
+        default: 'bg-primary text-primary-foreground shadow-[0_12px_32px_-18px_rgb(221_109_54_/_0.95)] hover:bg-primary/90',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        outline: 'border border-border bg-card text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground',
+        ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-10 px-4',
-        sm: 'h-8 px-3 text-sm',
-        lg: 'h-11 px-5 text-base',
+        default: 'h-10 px-4 py-2 has-[>svg]:px-3',
+        sm: 'h-8 px-3 text-sm has-[>svg]:px-2.5',
+        lg: 'h-11 px-5 text-base has-[>svg]:px-4',
         icon: 'size-10',
       },
     },
@@ -29,17 +30,27 @@ const buttonVariants = cva(
   },
 );
 
-export function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
+export const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<'button'> &
+    VariantProps<typeof buttonVariants> & {
+      asChild?: boolean;
+    }
+>(({ className, variant = 'default', size = 'default', asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'button';
 
-  return <Comp className={cn(buttonVariants({ variant, size, className }))} {...props} />;
-}
+  return (
+    <Comp
+      ref={ref}
+      data-slot="button"
+      data-variant={variant ?? undefined}
+      data-size={size ?? undefined}
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
+});
+
+Button.displayName = 'Button';
+
+export { buttonVariants };

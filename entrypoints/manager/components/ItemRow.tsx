@@ -1,12 +1,13 @@
 import { ChevronDown, ChevronRight, Folder, MoreHorizontal } from 'lucide-react';
-import { createPortal } from 'react-dom';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, CSSProperties, Ref } from 'react';
 
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { getDisplayTitle, isFolder } from '@/lib/bookmark-service';
-import { cn, swallowNextDocumentClick } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
-import { getBookmarkMeta, getCompensatedMenuPosition, getFaviconUrl } from '../utils';
+import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
+import { getBookmarkMeta, getFaviconUrl } from '../utils';
 
 type ItemRowProps = {
   node: chrome.bookmarks.BookmarkTreeNode;
@@ -19,14 +20,9 @@ type ItemRowProps = {
   compactTree?: boolean;
   longPressMenu?: boolean;
   expanded?: boolean;
-  menuOpen: boolean;
-  menuAnchor?: { top: number; bottom: number; right: number } | null;
-  menuDirection: 'up' | 'down';
-  menuContent?: React.ReactNode;
-  onCloseMenu?: () => void;
+  menuContent?: (closeMenu: () => void) => React.ReactNode;
   highlighted?: boolean;
   onClick: () => void;
-  onAction: (button: HTMLElement) => void;
   onToggleExpand?: () => void;
   wrapperRef?: Ref<HTMLDivElement>;
   wrapperStyle?: CSSProperties;
@@ -45,14 +41,9 @@ export function ItemRow({
   compactTree,
   longPressMenu,
   expanded,
-  menuOpen,
-  menuAnchor,
-  menuDirection,
   menuContent,
-  onCloseMenu,
   highlighted,
   onClick,
-  onAction,
   onToggleExpand,
   wrapperRef,
   wrapperStyle,
@@ -61,36 +52,13 @@ export function ItemRow({
 }: ItemRowProps) {
   const folder = isFolder(node);
   const folderItemCount = folderChildCount ?? node.children?.length ?? 0;
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [portalMenuStyle, setPortalMenuStyle] = useState<CSSProperties | null>(null);
-  const compactMenuStyle = compact
-    ? (menuDirection === 'up'
-        ? ({ bottom: '100%' } satisfies CSSProperties)
-        : ({ top: '100%' } satisfies CSSProperties))
-    : undefined;
-
-  useLayoutEffect(() => {
-    if (!menuOpen || !menuAnchor || !menuRef.current) {
-      setPortalMenuStyle(null);
-      return;
-    }
-
-    const rect = menuRef.current.getBoundingClientRect();
-    const preferredTop = menuDirection === 'down'
-      ? menuAnchor.top
-      : window.innerHeight - menuAnchor.bottom - rect.height;
-
-    setPortalMenuStyle({
-      ...getCompensatedMenuPosition({
-        anchorRight: menuAnchor.right,
-        preferredTop,
-        menuWidth: rect.width,
-        menuHeight: rect.height,
-        viewportMargin: 0,
-      }),
-      visibility: 'visible',
-    });
-  }, [compact, menuAnchor, menuDirection, menuOpen]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+  }, []);
+  useImmediateMenuDismiss({ open: menuOpen, onClose: closeMenu, triggerRef, contentRef });
 
   const rowClassName = cn(
     'block min-w-0 max-w-full flex-1 touch-manipulation text-left text-foreground',
@@ -227,69 +195,38 @@ export function ItemRow({
         )}
 
         {!selectionMode && !longPressMenu ? (
-          <button
-            type="button"
-            data-item-menu-button
-            onClick={(event) => {
-              event.stopPropagation();
-              onAction(event.currentTarget as HTMLElement);
+          <DropdownMenu
+            open={menuOpen}
+            onOpenChange={(nextOpen) => {
+              setMenuOpen(nextOpen);
             }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onAction(event.currentTarget as HTMLElement);
-              }
-            }}
-            className={cn(
-              compact
-                ? 'flex size-6 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground active:scale-[0.96]'
-                : 'flex size-8 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground active:scale-[0.96]',
-              menuOpen && 'bg-muted text-foreground',
-            )}
           >
-            <MoreHorizontal className={cn(compact ? 'size-3.5' : 'size-4')} />
-          </button>
+            <DropdownMenuTrigger asChild>
+              <button
+                ref={triggerRef}
+                type="button"
+                data-item-menu-button
+                className={cn(
+                  compact
+                    ? 'flex size-6 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]'
+                    : 'flex size-8 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]',
+                  menuOpen && 'bg-muted text-foreground',
+                )}
+              >
+                <MoreHorizontal className={cn(compact ? 'size-3.5' : 'size-4')} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              ref={contentRef}
+              align="end"
+              collisionPadding={8}
+              className={cn(compact ? 'w-32 rounded-lg p-0.5' : 'w-36 rounded-2xl p-1')}
+            >
+              {menuContent?.(closeMenu)}
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
       </div>
-
-      {menuOpen ? (
-        menuAnchor ? createPortal(
-          <>
-            <div
-              className="fixed inset-0 z-[210]"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                swallowNextDocumentClick();
-                onCloseMenu?.();
-              }}
-            />
-            <div
-              ref={menuRef}
-              data-item-menu
-              className={cn(
-                'fixed z-[220] border bg-white p-1 shadow-xl',
-                compact ? 'w-32 rounded-lg p-0.5' : 'w-36 rounded-2xl',
-              )}
-              style={portalMenuStyle ?? { left: -9999, top: -9999, visibility: 'hidden' }}
-            >
-              {menuContent}
-            </div>
-          </>,
-          document.body,
-        ) : (
-          <div
-            style={compactMenuStyle}
-            className={cn(
-              'absolute right-2 z-[70] border bg-white shadow-xl',
-              compact ? 'w-32 rounded-lg p-0.5' : 'w-36 rounded-2xl p-1',
-              !compact && (menuDirection === 'up' ? 'bottom-11' : 'top-11'),
-            )}
-          >
-            {menuContent}
-          </div>
-        )
-      ) : null}
     </div>
   );
 }
