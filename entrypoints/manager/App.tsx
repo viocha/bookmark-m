@@ -224,9 +224,19 @@ export default function App() {
     void safeCall(() => setViewSettings(next), undefined);
   }, [state.setViewSettingsState]);
 
-  const revealNodeInTree = useCallback(async (node: chrome.bookmarks.BookmarkTreeNode) => {
+  const revealNodeInTree = useCallback(async (
+    node: chrome.bookmarks.BookmarkTreeNode,
+    options?: { expandTargetFolder?: boolean; clearSearch?: boolean },
+  ) => {
+    const expandTargetFolder = options?.expandTargetFolder ?? false;
+    const clearSearch = options?.clearSearch ?? true;
+    const revealPathTargetId = node.url
+      ? node.parentId
+      : expandTargetFolder
+        ? node.id
+        : node.parentId;
     const ancestorPath = await safeCall(
-      () => getFolderPathNodes(node.url ? (node.parentId ?? state.currentFolderIdRef.current) : node.id),
+      () => (revealPathTargetId && revealPathTargetId !== '0' ? getFolderPathNodes(revealPathTargetId) : Promise.resolve([])),
       [],
     );
     const ancestorIds = ancestorPath.map((item) => item.id);
@@ -235,12 +245,13 @@ export default function App() {
       state.persistExpandedTreeIds(next);
       return next;
     });
-    state.setSearchQuery('');
-    state.setSearchOpen(false);
+    if (clearSearch) {
+      state.setSearchQuery('');
+      state.setSearchOpen(false);
+    }
     state.setActionTarget(null);
     state.setHighlightedNodeId(node.id);
   }, [
-    state.currentFolderIdRef,
     state.persistExpandedTreeIds,
     state.setActionTarget,
     state.setExpandedTreeIds,
@@ -274,14 +285,12 @@ export default function App() {
       onShowLocation={(targetNode) => {
         if (state.displayMode === 'tree') {
           closeMenu();
-          void revealNodeInTree(targetNode);
+          void revealNodeInTree(targetNode, { expandTargetFolder: false });
           return;
         }
         closeMenu();
         if (targetNode.parentId) {
-          state.setSearchQuery('');
-          state.setSearchOpen(false);
-          void navigation.goToFolder(targetNode.parentId).then(() => {
+          void navigation.goToFolder(targetNode.parentId, { clearSearchTiming: 'after' }).then(() => {
             state.setHighlightedNodeId(targetNode.id);
           });
         }
@@ -614,8 +623,11 @@ export default function App() {
         const sorted = sortFoldersFirst(results);
         const pathEntries = await Promise.all(
           sorted.map(async (node) => {
-            const pathTarget = node.url ? node.parentId ?? state.currentFolderId : node.id;
-            return [node.id, await safeCall(() => getFolderPath(pathTarget), '')] as const;
+            const parentId = node.parentId;
+            const parentPath = parentId && parentId !== '0'
+              ? await safeCall(() => getFolderPath(parentId), '根目录')
+              : '根目录';
+            return [node.id, parentPath] as const;
           }),
         );
 
@@ -717,6 +729,16 @@ export default function App() {
         getItemMenuContent={getItemMenuContent}
         onToggleTreeFolder={navigation.toggleTreeExpanded}
         onOpenNode={(node) => {
+          if (state.deferredSearch && !node.url) {
+            if (state.displayMode === 'tree') {
+              void revealNodeInTree(node, { expandTargetFolder: true });
+              return;
+            }
+
+            void navigation.goToFolder(node.id, { clearSearchTiming: 'after' });
+            return;
+          }
+
           void navigation.openNode(node);
         }}
         onToggleSelect={toggleSelect}

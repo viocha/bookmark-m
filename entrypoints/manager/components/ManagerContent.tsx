@@ -214,7 +214,9 @@ export function ManagerContent({
   onReorderCurrentListItem,
 }: ManagerContentProps) {
   const isTreeMode = displayMode === 'tree' && !deferredSearch;
-  const currentCompact = isTreeMode ? treeCompact : listCompact;
+  const searchActive = Boolean(deferredSearch);
+  const currentCompact = searchActive ? false : isTreeMode ? treeCompact : listCompact;
+  const listRowCompact = searchActive ? false : listCompact;
   const canDragReorder = displayMode === 'list' && !deferredSearch && !selectionMode;
   const canDragTreeReorder = isTreeMode && !selectionMode;
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
@@ -367,8 +369,8 @@ export function ManagerContent({
                           selected={selectedIds.includes(node.id)}
                           selectionMode={selectionMode}
                           searchPath={deferredSearch ? searchPaths[node.id] : undefined}
-                          compact={listCompact}
-                          menuContent={(closeMenu) => getItemMenuContent(node, listCompact, closeMenu)}
+                          compact={listRowCompact}
+                          menuContent={(closeMenu) => getItemMenuContent(node, listRowCompact, closeMenu)}
                           highlighted={highlightedNodeId === node.id}
                           onClick={() => {
                             if (suppressClickRef.current === node.id) return;
@@ -393,7 +395,7 @@ export function ManagerContent({
                         selected={selectedIds.includes(activeDragNode.id)}
                         selectionMode={selectionMode}
                         searchPath={deferredSearch ? searchPaths[activeDragNode.id] : undefined}
-                        compact={isTreeMode ? treeCompact : listCompact}
+                        compact={isTreeMode ? treeCompact : listRowCompact}
                         treeRow={isTreeMode}
                         compactTree={isTreeMode && treeCompact}
                         longPressMenu={false}

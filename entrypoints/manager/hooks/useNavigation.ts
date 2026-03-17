@@ -48,6 +48,11 @@ type UseNavigationParams = {
   resetSelection: () => void;
 };
 
+type GoToFolderOptions = {
+  clearSearchTiming?: 'before' | 'after' | 'never';
+  closeSearch?: boolean;
+};
+
 export function useNavigation({
   displayMode,
   setDisplayModeState,
@@ -192,12 +197,23 @@ export function useNavigation({
     pruneListScrollPositions,
   ]);
 
-  const goToFolder = useCallback(async (folderId: string) => {
+  const goToFolder = useCallback(async (folderId: string, options: GoToFolderOptions = {}) => {
+    const clearSearchTiming = options.clearSearchTiming ?? 'before';
+    const closeSearch = options.closeSearch ?? clearSearchTiming !== 'never';
+
     rememberViewportScroll();
     resetSelection();
-    setSearchQuery('');
+    if (clearSearchTiming === 'before') {
+      setSearchQuery('');
+    }
+    if (closeSearch) {
+      setSearchOpen(false);
+    }
     await reload(folderId);
-  }, [rememberViewportScroll, reload, resetSelection, setSearchQuery]);
+    if (clearSearchTiming === 'after') {
+      setSearchQuery('');
+    }
+  }, [rememberViewportScroll, reload, resetSelection, setSearchOpen, setSearchQuery]);
 
   const openNode = useCallback(async (node: chrome.bookmarks.BookmarkTreeNode, active = true) => {
     if (!node.url) {
