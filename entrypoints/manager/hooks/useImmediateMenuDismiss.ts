@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { swallowNextDocumentClick } from '@/lib/utils';
 
 type UseImmediateMenuDismissOptions = {
   open: boolean;
@@ -29,6 +30,8 @@ export function useImmediateMenuDismiss({
 
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      swallowNextDocumentClick();
       onClose();
     };
 
@@ -36,6 +39,8 @@ export function useImmediateMenuDismiss({
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      swallowNextDocumentClick();
       onClose();
     };
 

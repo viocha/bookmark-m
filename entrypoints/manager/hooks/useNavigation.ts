@@ -16,7 +16,7 @@ import {
   type LaunchContext,
 } from '@/lib/bookmark-service';
 
-import { collectFolderChildCounts, HOME_FOLDER_ID, safeCall, safeCallWithTimeout, TREE_SCROLL_KEY } from '../utils';
+import { collectFolderChildCounts, HOME_FOLDER_ID, openUrlWithBlankTarget, safeCall, safeCallWithTimeout, TREE_SCROLL_KEY } from '../utils';
 
 type UseNavigationParams = {
   displayMode: BookmarkDisplayMode;
@@ -215,12 +215,12 @@ export function useNavigation({
     }
   }, [rememberViewportScroll, reload, resetSelection, setSearchOpen, setSearchQuery]);
 
-  const openNode = useCallback(async (node: chrome.bookmarks.BookmarkTreeNode, active = true) => {
+  const openNode = useCallback(async (node: chrome.bookmarks.BookmarkTreeNode, _active = true) => {
     if (!node.url) {
       await goToFolder(node.id);
       return;
     }
-    await chrome.tabs.create({ url: node.url, active });
+    openUrlWithBlankTarget(node.url);
   }, [goToFolder]);
 
   const goHome = useCallback(async () => {

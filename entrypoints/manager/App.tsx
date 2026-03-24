@@ -652,7 +652,7 @@ export default function App() {
   }, [state.currentFolderId, state.deferredSearch, state.setSearchPaths, state.setSearchResults, state.setSearching]);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[linear-gradient(180deg,#fbf4e8_0%,#f2e7d6_100%)] text-foreground">
+    <div className="flex h-[var(--app-height)] flex-col overflow-hidden bg-[linear-gradient(180deg,#fbf4e8_0%,#f2e7d6_100%)] text-foreground">
       <ManagerToolbar
         toolsMenuRef={state.toolsMenuRef}
         pageTitle={navigation.pageTitle}
