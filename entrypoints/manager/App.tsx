@@ -39,9 +39,18 @@ import { useMove } from './hooks/useMove';
 import { useNavigation } from './hooks/useNavigation';
 import { flattenTreeNodes, HOME_FOLDER_ID, safeCall, safeCallWithTimeout } from './utils';
 
+type ManagerHistoryState = {
+  managerBase?: boolean;
+  managerListSentinel?: boolean;
+  folderId?: string;
+  trail?: string[];
+};
+
 export default function App() {
   const state = useManagerPageState();
-  const ignoreNextListPopRef = useRef(false);
+  const listHistoryTrailRef = useRef<string[] | null>(null);
+  const ignoreSyntheticListPopRef = useRef(false);
+  const pendingListTrailRef = useRef<string[] | null>(null);
 
   const resetSelection = useCallback(() => {
     state.setSelectionMode(false);
@@ -133,6 +142,16 @@ export default function App() {
       state.displayMode === 'tree' && !state.deferredSearch ? flattenTreeNodes(state.roots) : visibleNodes,
     [state.deferredSearch, state.displayMode, state.roots, visibleNodes],
   );
+
+  const pushListHistoryTrail = useCallback((trail: string[], startIndex = 0) => {
+    for (let index = startIndex; index < trail.length; index += 1) {
+      const nextTrail = trail.slice(0, index + 1);
+      window.history.pushState(
+        { managerListSentinel: true, folderId: trail[index], trail: nextTrail } satisfies ManagerHistoryState,
+        '',
+      );
+    }
+  }, []);
 
   const openNodeUrls = useCallback(async (ids: string[]) => {
     const urls = Array.from(new Set((await Promise.all(ids.map(async (id) => {
@@ -408,45 +427,69 @@ export default function App() {
     const listNavigationActive =
       state.viewSettingsState.listBackNavigation && state.displayMode === 'list' && !state.deferredSearch;
     if (!listNavigationActive) return;
+    if (state.loading) return;
 
-    const currentState = window.history.state as
-      | { managerBase?: boolean; managerListSentinel?: boolean; folderId?: string }
-      | null;
+    const desiredTrail = state.currentFolderId === HOME_FOLDER_ID ? [] : state.breadcrumbs.map((node) => node.id);
+    const historyTrail = listHistoryTrailRef.current;
 
-    if (state.currentFolderId === HOME_FOLDER_ID) {
-      if (currentState?.managerListSentinel) {
-        ignoreNextListPopRef.current = true;
-        window.history.back();
-        return;
-      }
-
-      if (!currentState?.managerBase) {
-        window.history.replaceState({ managerBase: true }, '');
-      }
+    if (historyTrail === null) {
+      window.history.replaceState({ managerBase: true, trail: [] } satisfies ManagerHistoryState, '');
+      pushListHistoryTrail(desiredTrail);
+      listHistoryTrailRef.current = desiredTrail;
       return;
     }
 
-    if (currentState?.managerListSentinel) {
-      if (currentState.folderId !== state.currentFolderId) {
-        window.history.replaceState(
-          { managerListSentinel: true, folderId: state.currentFolderId },
-          '',
-        );
-      }
+    if (
+      historyTrail.length === desiredTrail.length
+      && historyTrail.every((folderId, index) => folderId === desiredTrail[index])
+    ) {
       return;
     }
 
-    if (!currentState?.managerBase) {
-      window.history.replaceState({ managerBase: true }, '');
+    let commonLength = 0;
+    while (
+      commonLength < historyTrail.length
+      && commonLength < desiredTrail.length
+      && historyTrail[commonLength] === desiredTrail[commonLength]
+    ) {
+      commonLength += 1;
     }
 
-    window.history.pushState({ managerListSentinel: true, folderId: state.currentFolderId }, '');
-  }, [state.currentFolderId, state.deferredSearch, state.displayMode, state.viewSettingsState.listBackNavigation]);
+    if (commonLength === historyTrail.length && desiredTrail.length > historyTrail.length) {
+      pushListHistoryTrail(desiredTrail, historyTrail.length);
+      listHistoryTrailRef.current = desiredTrail;
+      return;
+    }
+
+    ignoreSyntheticListPopRef.current = true;
+    pendingListTrailRef.current = desiredTrail;
+    listHistoryTrailRef.current = desiredTrail;
+    window.history.go(commonLength - historyTrail.length);
+  }, [
+    state.breadcrumbs,
+    state.currentFolderId,
+    state.deferredSearch,
+    state.displayMode,
+    state.loading,
+    state.viewSettingsState.listBackNavigation,
+    pushListHistoryTrail,
+  ]);
 
   useEffect(() => {
     const handlePopState = () => {
-      if (ignoreNextListPopRef.current) {
-        ignoreNextListPopRef.current = false;
+      if (ignoreSyntheticListPopRef.current) {
+        ignoreSyntheticListPopRef.current = false;
+
+        const pendingTrail = pendingListTrailRef.current;
+        pendingListTrailRef.current = null;
+
+        if (pendingTrail) {
+          const historyState = window.history.state as ManagerHistoryState | null;
+          const settledTrail = historyState?.managerListSentinel
+            ? historyState.trail ?? (historyState.folderId ? [historyState.folderId] : [])
+            : [];
+          pushListHistoryTrail(pendingTrail, settledTrail.length);
+        }
         return;
       }
 
@@ -454,19 +497,22 @@ export default function App() {
         !state.viewSettingsState.listBackNavigation
         || state.displayMode !== 'list'
         || state.deferredSearch
-        || state.currentFolderId === HOME_FOLDER_ID
       ) {
         return;
       }
 
-      const parentId = state.breadcrumbs.length > 1 ? state.breadcrumbs[state.breadcrumbs.length - 2].id : HOME_FOLDER_ID;
+      const historyState = window.history.state as ManagerHistoryState | null;
 
-      if (parentId === HOME_FOLDER_ID) {
-        void navigation.goHome();
+      if (historyState?.managerListSentinel && historyState.folderId && historyState.folderId !== state.currentFolderId) {
+        listHistoryTrailRef.current = historyState.trail ?? [historyState.folderId];
+        void navigation.goToFolder(historyState.folderId);
         return;
       }
 
-      void navigation.goToFolder(parentId);
+      if (state.currentFolderId !== HOME_FOLDER_ID) {
+        listHistoryTrailRef.current = [];
+        void navigation.goHome();
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -475,11 +521,11 @@ export default function App() {
     };
   }, [
     navigation,
-    state.breadcrumbs,
     state.currentFolderId,
     state.deferredSearch,
     state.displayMode,
     state.viewSettingsState.listBackNavigation,
+    pushListHistoryTrail,
   ]);
 
   useEffect(() => {

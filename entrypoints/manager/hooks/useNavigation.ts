@@ -10,6 +10,7 @@ import {
   getLaunchContext,
   getNode,
   getTreeRoots,
+  setLastFolderId,
   setDisplayMode,
   type BookmarkDisplayMode,
   type FolderTreeNode,
@@ -159,6 +160,7 @@ export function useNavigation({
         setFolderChildCounts(nextFolderChildCounts);
         setLaunchContextState(context);
         pruneListScrollPositions(folderPathNodes.map((node) => node.id));
+        void safeCallWithTimeout(() => setLastFolderId(nextFolderId), undefined);
       }
 
       const nextScrollKey = displayMode === 'tree' ? TREE_SCROLL_KEY : requestedId === HOME_FOLDER_ID ? HOME_FOLDER_ID : requestedId;
