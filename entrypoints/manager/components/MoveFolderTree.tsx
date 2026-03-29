@@ -32,6 +32,7 @@ export function MoveFolderTree({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const pendingTouchTapIdsRef = useRef<Record<string, boolean>>({});
   const closeMenu = useCallback(() => {
     setOpenMenuId(null);
   }, []);
@@ -41,6 +42,31 @@ export function MoveFolderTree({
     treeNodes.map((folder) => {
       const expanded = expandedIds.includes(folder.id);
       const selectable = !movingIds.includes(folder.id);
+      const resetPendingTouchTap = () => {
+        delete pendingTouchTapIdsRef.current[folder.id];
+      };
+
+      const touchMenuTriggerProps = {
+        onPointerDownCapture: (event: React.PointerEvent<HTMLButtonElement>) => {
+          if (event.pointerType !== 'touch') {
+            resetPendingTouchTap();
+            return;
+          }
+
+          pendingTouchTapIdsRef.current[folder.id] = true;
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        },
+        onPointerCancel: () => {
+          resetPendingTouchTap();
+        },
+        onClick: () => {
+          if (!pendingTouchTapIdsRef.current[folder.id]) return;
+
+          resetPendingTouchTap();
+          setOpenMenuId((currentOpenMenuId) => (currentOpenMenuId === folder.id ? null : folder.id));
+        },
+      };
 
       return (
         <div key={folder.id}>
@@ -101,6 +127,7 @@ export function MoveFolderTree({
                   <button
                     ref={openMenuId === folder.id ? triggerRef : undefined}
                     type="button"
+                    {...touchMenuTriggerProps}
                     className={cn(
                       'flex size-7 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]',
                       openMenuId === folder.id && 'bg-muted text-foreground',
@@ -112,6 +139,7 @@ export function MoveFolderTree({
                 <DropdownMenuContent
                   ref={openMenuId === folder.id ? contentRef : undefined}
                   align="end"
+                  side="bottom"
                   collisionPadding={8}
                   className="w-32 rounded-2xl p-1"
                 >

@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { cn } from '@/lib/utils';
 import type { BookmarkDisplayMode, LaunchContext } from '@/lib/bookmark-service';
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
+import { useTouchDropdownTrigger } from '../hooks/useTouchDropdownTrigger';
 
 type HeaderToolsMenuProps = {
   displayMode: BookmarkDisplayMode;
@@ -47,6 +48,11 @@ export function HeaderToolsMenu({
     setOpen(false);
   }, []);
   useImmediateMenuDismiss({ open, onClose: closeMenu, triggerRef, contentRef });
+  const touchMenuTriggerProps = useTouchDropdownTrigger({
+    onToggle: () => {
+      setOpen((currentOpen) => !currentOpen);
+    },
+  });
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -55,6 +61,7 @@ export function HeaderToolsMenu({
           ref={triggerRef}
           variant="outline"
           size="icon"
+          {...touchMenuTriggerProps}
           className={cn('size-8 rounded-full', open && 'bg-muted/60 text-foreground')}
         >
           <MoreHorizontal className="size-4" />
@@ -63,7 +70,7 @@ export function HeaderToolsMenu({
       <DropdownMenuContent
         ref={contentRef}
         align="end"
-        sideOffset={8}
+        side="bottom"
         className="z-[90] w-56 rounded-2xl p-1 shadow-xl"
       >
         <div className="mb-1 grid grid-cols-2 gap-1">

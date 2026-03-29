@@ -7,6 +7,7 @@ import { getDisplayTitle, isFolder } from '@/lib/bookmark-service';
 import { cn } from '@/lib/utils';
 
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
+import { useTouchDropdownTrigger } from '../hooks/useTouchDropdownTrigger';
 import { getBookmarkMeta, getFaviconUrl } from '../utils';
 
 type ItemRowProps = {
@@ -59,6 +60,11 @@ export function ItemRow({
     setMenuOpen(false);
   }, []);
   useImmediateMenuDismiss({ open: menuOpen, onClose: closeMenu, triggerRef, contentRef });
+  const touchMenuTriggerProps = useTouchDropdownTrigger({
+    onToggle: () => {
+      setMenuOpen((currentOpen) => !currentOpen);
+    },
+  });
 
   const rowClassName = cn(
     'block min-w-0 max-w-full flex-1 touch-manipulation text-left text-foreground',
@@ -206,6 +212,7 @@ export function ItemRow({
                 ref={triggerRef}
                 type="button"
                 data-item-menu-button
+                {...touchMenuTriggerProps}
                 className={cn(
                   compact
                     ? 'flex size-6 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]'
@@ -219,6 +226,7 @@ export function ItemRow({
             <DropdownMenuContent
               ref={contentRef}
               align="end"
+              side="bottom"
               collisionPadding={8}
               className={cn(compact ? 'w-32 rounded-lg p-0.5' : 'w-36 rounded-2xl p-1')}
             >
