@@ -191,9 +191,6 @@ export function useBookmarkEditor({
     setBookmarkComposer((state) => ({
       ...state,
       open: false,
-      title: '',
-      url: '',
-      originalParentId: state.parentId,
       recentOpen: false,
     }));
     await reload(currentFolderId);
