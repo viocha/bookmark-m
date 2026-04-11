@@ -1,4 +1,5 @@
 import { House } from 'lucide-react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -12,11 +13,31 @@ type PathBarProps = {
 };
 
 export function PathBar({ visible, isHomeView, breadcrumbs, onGoHome, onGoToFolder, getTitle }: PathBarProps) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const scrollEndRef = useRef<HTMLSpanElement | null>(null);
+  const breadcrumbKey = useMemo(() => breadcrumbs.map((node) => node.id).join('/'), [breadcrumbs]);
+
+  useLayoutEffect(() => {
+    if (!visible) return;
+
+    const container = scrollContainerRef.current;
+    const end = scrollEndRef.current;
+    if (!container || !end) return;
+
+    end.scrollIntoView({
+      block: 'nearest',
+      inline: 'end',
+    });
+  }, [breadcrumbKey, visible]);
+
   if (!visible) return null;
 
   return (
     <div className="flex h-9 shrink-0 items-center border-b border-border/60 bg-background/82 px-3 backdrop-blur">
-      <div className="flex w-full items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        ref={scrollContainerRef}
+        className="flex w-full items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
         <button
           type="button"
           onClick={onGoHome}
@@ -40,6 +61,7 @@ export function PathBar({ visible, isHomeView, breadcrumbs, onGoHome, onGoToFold
             {getTitle(node)}
           </button>
         ))}
+        <span ref={scrollEndRef} aria-hidden="true" className="h-px w-px shrink-0" />
       </div>
     </div>
   );
