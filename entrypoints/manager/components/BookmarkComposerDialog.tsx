@@ -8,13 +8,6 @@ import type { RecentFolder } from '@/lib/bookmark-service';
 
 import type { BookmarkComposerState } from '../types';
 
-function selectInputText(input: HTMLInputElement) {
-  input.setSelectionRange(0, input.value.length);
-  window.requestAnimationFrame(() => {
-    input.scrollLeft = 0;
-  });
-}
-
 type BookmarkComposerDialogProps = {
   state: BookmarkComposerState;
   folderLabel: string;
@@ -109,7 +102,6 @@ export function BookmarkComposerDialog({
           <Input
             autoFocus
             value={state.title}
-            onFocus={(event) => selectInputText(event.currentTarget)}
             onChange={(event) => onTitleChange(event.target.value)}
             placeholder="标题"
           />
