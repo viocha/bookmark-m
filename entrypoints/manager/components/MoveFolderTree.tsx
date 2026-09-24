@@ -32,7 +32,6 @@ export function MoveFolderTree({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const pendingTouchTapIdsRef = useRef<Record<string, boolean>>({});
   const closeMenu = useCallback(() => {
     setOpenMenuId(null);
   }, []);
@@ -42,32 +41,6 @@ export function MoveFolderTree({
     treeNodes.map((folder) => {
       const expanded = expandedIds.includes(folder.id);
       const selectable = !movingIds.includes(folder.id);
-      const resetPendingTouchTap = () => {
-        delete pendingTouchTapIdsRef.current[folder.id];
-      };
-
-      const touchMenuTriggerProps = {
-        onPointerDownCapture: (event: React.PointerEvent<HTMLButtonElement>) => {
-          if (event.pointerType !== 'touch') {
-            resetPendingTouchTap();
-            return;
-          }
-
-          pendingTouchTapIdsRef.current[folder.id] = true;
-          event.stopPropagation();
-          event.nativeEvent.stopImmediatePropagation?.();
-        },
-        onPointerCancel: () => {
-          resetPendingTouchTap();
-        },
-        onClick: () => {
-          if (!pendingTouchTapIdsRef.current[folder.id]) return;
-
-          resetPendingTouchTap();
-          setOpenMenuId((currentOpenMenuId) => (currentOpenMenuId === folder.id ? null : folder.id));
-        },
-      };
-
       return (
         <div key={folder.id}>
           <div className="relative">
@@ -75,7 +48,7 @@ export function MoveFolderTree({
               type="button"
               className={cn(
                 'flex w-full touch-manipulation items-center gap-0.5 rounded-lg px-1 py-0.5 pr-10 text-left',
-                targetFolderId === folder.id && 'bg-primary/10',
+                targetFolderId === folder.id && 'bg-accent',
               )}
               disabled={!selectable}
               onClick={() => onSelectTarget(folder)}
@@ -123,43 +96,40 @@ export function MoveFolderTree({
                 open={openMenuId === folder.id}
                 onOpenChange={(open) => setOpenMenuId(open ? folder.id : null)}
               >
-                <DropdownMenuTrigger asChild>
-                  <button
+                <DropdownMenuTrigger render={<button
                     ref={openMenuId === folder.id ? triggerRef : undefined}
                     type="button"
-                    {...touchMenuTriggerProps}
                     className={cn(
                       'flex size-7 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]',
                       openMenuId === folder.id && 'bg-muted text-foreground',
                     )}
-                  >
+                  />}>
                     <MoreHorizontal className="size-4" />
-                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   ref={openMenuId === folder.id ? contentRef : undefined}
                   align="end"
                   side="bottom"
-                  collisionPadding={8}
-                  className="w-32 rounded-2xl p-1"
+
+                  className="w-32 rounded-lg p-1"
                 >
                   <DropdownMenuItem
-                    onSelect={() => {
+                    onClick={() => {
                       closeMenu();
                       onCreateFolder(folder);
                     }}
-                    className="h-8 rounded-xl px-2.5 text-xs font-medium"
+                    className="h-8 rounded-md px-2.5 text-xs font-medium"
                   >
                     <FolderPlus className="size-4" />
                     新建文件夹
                   </DropdownMenuItem>
                   {!isProtectedNode(folder.id) ? (
                     <DropdownMenuItem
-                      onSelect={() => {
+                      onClick={() => {
                         closeMenu();
                         onRenameFolder(folder);
                       }}
-                      className="h-8 rounded-xl px-2.5 text-xs font-medium"
+                      className="h-8 rounded-md px-2.5 text-xs font-medium"
                     >
                       <Pencil className="size-4" />
                       重命名
@@ -167,12 +137,12 @@ export function MoveFolderTree({
                   ) : null}
                   {!isProtectedNode(folder.id) ? (
                     <DropdownMenuItem
-                      onSelect={() => {
+                      onClick={() => {
                         closeMenu();
                         onDeleteFolder(folder);
                       }}
                       variant="destructive"
-                      className="h-8 rounded-xl px-2.5 text-xs font-medium"
+                      className="h-8 rounded-md px-2.5 text-xs font-medium"
                     >
                       <Trash2 className="size-4" />
                       删除

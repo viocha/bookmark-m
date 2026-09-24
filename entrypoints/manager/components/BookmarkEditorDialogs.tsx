@@ -1,4 +1,4 @@
-import type { RecentFolder } from '@/lib/bookmark-service';
+import type { InsertPosition, RecentFolder } from '@/lib/bookmark-service';
 import type { BookmarkComposerState, DetailState, FolderComposerState } from '../types';
 import { BookmarkComposerDialog } from './BookmarkComposerDialog';
 import { DetailsDialog } from './DetailsDialog';
@@ -8,16 +8,18 @@ type BookmarkEditorDialogsProps = {
   folderComposer: FolderComposerState;
   onFolderComposerOpenChange: (open: boolean) => void;
   onFolderComposerTitleChange: (title: string) => void;
+  onFolderComposerPositionChange: (position: InsertPosition) => void;
   onSubmitFolder: () => void;
   bookmarkComposer: BookmarkComposerState;
   bookmarkComposerFolderName: string;
   recentFolders: RecentFolder[];
   onBookmarkComposerOpenChange: (open: boolean) => void;
   onBookmarkComposerPickParent: () => void;
-  onBookmarkComposerToggleRecentFolders: () => void;
+  onBookmarkComposerRecentOpenChange: (open: boolean) => void;
   onBookmarkComposerPickRecentFolder: (folderId: string) => void;
   onBookmarkComposerTitleChange: (title: string) => void;
   onBookmarkComposerUrlChange: (url: string) => void;
+  onBookmarkComposerPositionChange: (position: InsertPosition) => void;
   onBookmarkComposerRevealLocation: () => void;
   onBookmarkComposerDelete: () => void;
   onSubmitBookmark: () => void;
@@ -29,16 +31,18 @@ export function BookmarkEditorDialogs({
   folderComposer,
   onFolderComposerOpenChange,
   onFolderComposerTitleChange,
+  onFolderComposerPositionChange,
   onSubmitFolder,
   bookmarkComposer,
   bookmarkComposerFolderName,
   recentFolders,
   onBookmarkComposerOpenChange,
   onBookmarkComposerPickParent,
-  onBookmarkComposerToggleRecentFolders,
+  onBookmarkComposerRecentOpenChange,
   onBookmarkComposerPickRecentFolder,
   onBookmarkComposerTitleChange,
   onBookmarkComposerUrlChange,
+  onBookmarkComposerPositionChange,
   onBookmarkComposerRevealLocation,
   onBookmarkComposerDelete,
   onSubmitBookmark,
@@ -51,6 +55,7 @@ export function BookmarkEditorDialogs({
         state={folderComposer}
         onOpenChange={onFolderComposerOpenChange}
         onTitleChange={onFolderComposerTitleChange}
+        onPositionChange={onFolderComposerPositionChange}
         onSubmit={onSubmitFolder}
       />
 
@@ -60,10 +65,11 @@ export function BookmarkEditorDialogs({
         recentFolders={recentFolders}
         onOpenChange={onBookmarkComposerOpenChange}
         onPickParent={onBookmarkComposerPickParent}
-        onToggleRecentFolders={onBookmarkComposerToggleRecentFolders}
+        onRecentOpenChange={onBookmarkComposerRecentOpenChange}
         onPickRecentFolder={onBookmarkComposerPickRecentFolder}
         onTitleChange={onBookmarkComposerTitleChange}
         onUrlChange={onBookmarkComposerUrlChange}
+        onPositionChange={onBookmarkComposerPositionChange}
         onRevealLocation={onBookmarkComposerRevealLocation}
         onDelete={onBookmarkComposerDelete}
         onSubmit={onSubmitBookmark}

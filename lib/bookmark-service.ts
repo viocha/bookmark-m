@@ -289,8 +289,8 @@ export async function getInsertSettings(): Promise<InsertSettings> {
   const stored = await storageGet<Record<string, unknown>>('local', INSERT_SETTINGS_KEY);
   const raw = stored[INSERT_SETTINGS_KEY] as Partial<InsertSettings> | undefined;
   return {
-    folderPosition: raw?.folderPosition === 'top' ? 'top' : 'bottom',
-    bookmarkPosition: raw?.bookmarkPosition === 'top' ? 'top' : 'bottom',
+    folderPosition: raw?.folderPosition === 'bottom' ? 'bottom' : 'top',
+    bookmarkPosition: raw?.bookmarkPosition === 'bottom' ? 'bottom' : 'top',
   };
 }
 
@@ -303,8 +303,8 @@ export async function getViewSettings(): Promise<ViewSettings> {
   const raw = stored[VIEW_SETTINGS_KEY] as Partial<ViewSettings> | undefined;
   return {
     listCompact: raw?.listCompact === true,
-    treeCompact: raw?.treeCompact !== false,
-    listBackNavigation: raw?.listBackNavigation === true,
+    treeCompact: raw?.treeCompact === true,
+    listBackNavigation: raw?.listBackNavigation !== false,
   };
 }
 
@@ -329,19 +329,22 @@ export async function getRecentFolders() {
     const recentItems = await chrome.bookmarks.getRecent(100);
     const tree = await bookmarksGetTree();
     const allFolders: chrome.bookmarks.BookmarkTreeNode[] = [];
+    const folderById = new Map<string, RecentFolder>();
 
-    const visit = (nodes: chrome.bookmarks.BookmarkTreeNode[]) => {
+    const visit = (nodes: chrome.bookmarks.BookmarkTreeNode[], parents: string[]) => {
       for (const node of nodes) {
+        const path = node.id === '0' || node.url ? parents : [...parents, getDisplayTitle(node)];
         if (!node.url && node.id !== '0') {
           allFolders.push(node);
+          folderById.set(node.id, { id: node.id, title: getDisplayTitle(node), path: path.join(' / ') });
         }
         if (node.children) {
-          visit(node.children);
+          visit(node.children, path);
         }
       }
     };
 
-    visit(tree);
+    visit(tree, []);
 
     const recentCreatedFolders = [...allFolders]
       .sort((left, right) => (right.dateAdded ?? 0) - (left.dateAdded ?? 0))
@@ -368,14 +371,8 @@ export async function getRecentFolders() {
       if (valid.length >= 50 || seen.has(id)) continue;
       seen.add(id);
 
-      const node = await getNode(id);
-      if (!node || node.url) continue;
-
-      valid.push({
-        id: node.id,
-        title: getDisplayTitle(node),
-        path: await getFolderPath(node.id),
-      });
+      const folder = folderById.get(id);
+      if (folder) valid.push(folder);
     }
 
     await storageSet('local', { [RECENT_FOLDER_KEY]: valid });
@@ -523,14 +520,14 @@ export async function normalizeAllFolders(): Promise<number> {
   return changedCount;
 }
 
-export async function createFolder(parentId: string, title: string, position: InsertPosition = 'bottom') {
+export async function createFolder(parentId: string, title: string, position: InsertPosition = 'top') {
   const index = await getFolderInsertIndex(parentId, position);
   const folder = await bookmarksCreate({ parentId, title: title.trim(), index });
   await rememberFolder(folder.parentId ?? parentId);
   return folder;
 }
 
-export async function createBookmark(parentId: string, title: string, url: string, position: InsertPosition = 'bottom') {
+export async function createBookmark(parentId: string, title: string, url: string, position: InsertPosition = 'top') {
   const normalizedUrl = normalizeUrl(url);
   const index = await getBookmarkInsertIndex(parentId, position);
   const bookmark = await bookmarksCreate({
@@ -613,8 +610,8 @@ export async function moveNodes(ids: string[], targetFolderId: string, settings?
 
   const folders = nodes.filter((node) => !node.url);
   const bookmarks = nodes.filter((node) => !!node.url);
-  const folderPosition = settings?.folderPosition === 'top' ? 'top' : 'bottom';
-  const bookmarkPosition = settings?.bookmarkPosition === 'top' ? 'top' : 'bottom';
+  const folderPosition = settings?.folderPosition === 'bottom' ? 'bottom' : 'top';
+  const bookmarkPosition = settings?.bookmarkPosition === 'bottom' ? 'bottom' : 'top';
 
   let folderIndex = await getFolderInsertIndex(targetFolderId, folderPosition);
 

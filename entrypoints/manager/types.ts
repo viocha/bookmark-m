@@ -1,9 +1,12 @@
+import type { InsertPosition } from '@/lib/bookmark-service';
+
 export type FolderComposerState = {
   open: boolean;
   mode: 'create' | 'edit';
   parentId: string;
   targetId?: string;
   title: string;
+  position: InsertPosition;
   source?: 'page' | 'move-panel';
 };
 
@@ -15,6 +18,7 @@ export type BookmarkComposerState = {
   targetId?: string;
   title: string;
   url: string;
+  position: InsertPosition;
   recentOpen: boolean;
 };
 

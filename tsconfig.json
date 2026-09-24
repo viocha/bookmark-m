@@ -3,6 +3,10 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
-    "types": ["chrome"]
+    "types": ["chrome"],
+    "paths": {
+      "@": ["."],
+      "@/*": ["./*"]
+    }
   }
 }

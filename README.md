@@ -21,13 +21,13 @@
 ## 开发
 
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
 ## 构建
 
 ```bash
-pnpm build
-pnpm build:zip
+bun run build
+bun run build:zip
 ```

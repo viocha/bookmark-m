@@ -1,5 +1,5 @@
-import { useCallback, useMemo, type Dispatch, type SetStateAction } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
+import { toast } from '@/lib/toast';
 
 import {
   createBookmark,
@@ -60,12 +60,14 @@ export function useBookmarkEditor({
   onFolderSaved,
   reload,
 }: UseBookmarkEditorParams) {
+  const bookmarkOpenRequestRef = useRef(0);
   const openFolderComposer = useCallback((
     mode: 'create' | 'edit',
     parentId: string,
     node?: chrome.bookmarks.BookmarkTreeNode,
     source: 'page' | 'move-panel' = 'page',
   ) => {
+    bookmarkOpenRequestRef.current += 1;
     setActionTarget(null);
     setFolderComposer({
       open: true,
@@ -73,17 +75,22 @@ export function useBookmarkEditor({
       parentId,
       targetId: node?.id,
       title: node ? getDisplayTitle(node) : '',
+      position: insertSettingsState.folderPosition,
       source,
     });
-  }, [setActionTarget, setFolderComposer]);
+  }, [insertSettingsState.folderPosition, setActionTarget, setFolderComposer]);
 
-  const openBookmarkComposer = useCallback((
+  const openBookmarkComposer = useCallback(async (
     mode: 'create' | 'edit',
     parentId: string,
     node?: chrome.bookmarks.BookmarkTreeNode,
     preset?: { title: string; url: string },
   ) => {
+    const requestId = ++bookmarkOpenRequestRef.current;
     setActionTarget(null);
+    const folders = await getRecentFolders();
+    if (requestId !== bookmarkOpenRequestRef.current) return;
+    setRecentFolders(folders);
     setBookmarkComposer({
       open: true,
       mode,
@@ -92,12 +99,10 @@ export function useBookmarkEditor({
       targetId: node?.id,
       title: preset?.title ?? node?.title ?? '',
       url: preset?.url ?? node?.url ?? '',
+      position: insertSettingsState.bookmarkPosition,
       recentOpen: false,
     });
-    void getRecentFolders().then((folders) => {
-      setRecentFolders(folders);
-    });
-  }, [setActionTarget, setBookmarkComposer, setRecentFolders]);
+  }, [insertSettingsState.bookmarkPosition, setActionTarget, setBookmarkComposer, setRecentFolders]);
 
   const saveLaunchTab = useCallback(async (preferredFolderId?: string, useRecentLocation = false) => {
     if (!launchContext?.url || !launchContext.title) return;
@@ -143,11 +148,9 @@ export function useBookmarkEditor({
 
     let savedNode: chrome.bookmarks.BookmarkTreeNode | null = null;
     if (folderComposer.mode === 'create') {
-      savedNode = await createFolder(folderComposer.parentId, title, insertSettingsState.folderPosition);
-      toast('文件夹已创建', { description: title });
+      savedNode = await createFolder(folderComposer.parentId, title, folderComposer.position);
     } else if (folderComposer.targetId) {
       savedNode = await updateBookmarkNode(folderComposer.targetId, { title });
-      toast('文件夹已更新', { description: title });
     }
 
     if (savedNode) {
@@ -161,7 +164,7 @@ export function useBookmarkEditor({
 
     setFolderComposer((state) => ({ ...state, open: false, title: '', source: 'page' }));
     await reload(currentFolderId);
-  }, [currentFolderId, folderComposer, insertSettingsState.folderPosition, onFolderSaved, reload, setFolderComposer]);
+  }, [currentFolderId, folderComposer, onFolderSaved, reload, setFolderComposer]);
 
   const submitBookmark = useCallback(async () => {
     const title = bookmarkComposer.title.trim();
@@ -174,14 +177,12 @@ export function useBookmarkEditor({
 
     let savedNode: chrome.bookmarks.BookmarkTreeNode | null = null;
     if (bookmarkComposer.mode === 'create') {
-      savedNode = await createBookmark(bookmarkComposer.parentId, title, url, insertSettingsState.bookmarkPosition);
-      toast('书签已创建', { description: title });
+      savedNode = await createBookmark(bookmarkComposer.parentId, title, url, bookmarkComposer.position);
     } else if (bookmarkComposer.targetId) {
       if (bookmarkComposer.parentId !== bookmarkComposer.originalParentId) {
         await moveNodes([bookmarkComposer.targetId], bookmarkComposer.parentId, insertSettingsState);
       }
       savedNode = await updateBookmarkNode(bookmarkComposer.targetId, { title, url });
-      toast('书签已更新', { description: title });
     }
 
     if (launchContext?.url === url && savedNode) {

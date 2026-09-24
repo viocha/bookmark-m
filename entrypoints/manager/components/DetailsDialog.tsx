@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 import type { DetailState } from '../types';
 
@@ -10,10 +10,9 @@ type DetailsDialogProps = {
 export function DetailsDialog({ state, onOpenChange }: DetailsDialogProps) {
   return (
     <Dialog open={state.open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-[1.5rem] p-4">
+      <DialogContent aria-describedby={undefined} className="rounded-md p-4">
         <DialogHeader>
           <DialogTitle>查看详情</DialogTitle>
-          <DialogDescription className="sr-only">查看书签或文件夹的详细信息。</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-xs leading-5 text-muted-foreground">
           <div className="space-y-1">

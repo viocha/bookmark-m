@@ -35,7 +35,7 @@ export function ManagerHeader({
       <div className="px-3 py-2">
         <div className="flex items-center gap-2">
           {searchOpen || deferredSearch ? (
-            <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-border bg-white/92 px-2">
+            <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-border bg-card px-2">
               <Search className="size-4 shrink-0 text-muted-foreground" />
               <input
                 ref={searchInputRef}

@@ -48,13 +48,13 @@ export function useManagerPageState() {
   const [displayMode, setDisplayModeState] = useState<BookmarkDisplayMode>('list');
   const [expandedTreeIds, setExpandedTreeIds] = useState<string[]>([]);
   const [insertSettingsState, setInsertSettingsState] = useState<InsertSettings>({
-    folderPosition: 'bottom',
-    bookmarkPosition: 'bottom',
+    folderPosition: 'top',
+    bookmarkPosition: 'top',
   });
   const [viewSettingsState, setViewSettingsState] = useState<ViewSettings>({
     listCompact: false,
-    treeCompact: true,
-    listBackNavigation: false,
+    treeCompact: false,
+    listBackNavigation: true,
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [normalizing, setNormalizing] = useState(false);
@@ -73,6 +73,7 @@ export function useManagerPageState() {
     mode: 'create',
     parentId: '1',
     title: '',
+    position: 'top',
     source: 'page',
   });
   const [bookmarkComposer, setBookmarkComposer] = useState<BookmarkComposerState>({
@@ -82,6 +83,7 @@ export function useManagerPageState() {
     originalParentId: '1',
     title: '',
     url: '',
+    position: 'top',
     recentOpen: false,
   });
   const [moveState, setMoveState] = useState<MoveState>({

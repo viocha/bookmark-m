@@ -10,8 +10,8 @@ import {
   getLaunchContext,
   getNode,
   getTreeRoots,
-  setLastFolderId,
   setDisplayMode,
+  setLastFolderId,
   type BookmarkDisplayMode,
   type FolderTreeNode,
   type LaunchContext,
@@ -93,7 +93,7 @@ export function useNavigation({
   }, [persistScrollPositions, scrollPositionsRef]);
 
   const getScrollViewport = useCallback(
-    () => scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement | null,
+    () => scrollAreaRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLDivElement | null,
     [scrollAreaRef],
   );
 
@@ -163,14 +163,12 @@ export function useNavigation({
         void safeCallWithTimeout(() => setLastFolderId(nextFolderId), undefined);
       }
 
+      const folders = await safeCallWithTimeout(() => collectFolderTree(), []);
+      if (requestId !== reloadRequestRef.current) return;
+      setFolderTree(folders);
       const nextScrollKey = displayMode === 'tree' ? TREE_SCROLL_KEY : requestedId === HOME_FOLDER_ID ? HOME_FOLDER_ID : requestedId;
       window.requestAnimationFrame(() => {
         getScrollViewport()?.scrollTo({ top: scrollPositionsRef.current[nextScrollKey] ?? 0 });
-      });
-
-      void safeCallWithTimeout(() => collectFolderTree(), []).then((folders) => {
-        if (requestId !== reloadRequestRef.current) return;
-        setFolderTree(folders);
       });
     } catch (error) {
       if (requestId !== reloadRequestRef.current) return;

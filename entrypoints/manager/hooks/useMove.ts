@@ -1,5 +1,4 @@
 import { useCallback, useMemo, type Dispatch, type SetStateAction } from 'react';
-import { toast } from 'sonner';
 
 import { moveNodes, type FolderTreeNode, type InsertSettings } from '@/lib/bookmark-service';
 
@@ -58,10 +57,9 @@ export function useMove({
 
     if (moveState.ids.length === 0) return;
     await moveNodes(moveState.ids, moveState.targetFolderId, insertSettingsState);
-    toast('已移动');
     resetSelection();
     setMoveState({ open: false, mode: 'move', ids: [], query: '', targetFolderId: currentFolderId });
-    await reload(moveState.targetFolderId);
+    await reload(currentFolderId);
   }, [currentFolderId, insertSettingsState, moveState, reload, resetSelection, setBookmarkComposer, setMoveState]);
 
   const filteredFolderTree = useMemo(() => filterFolderTree(folderTree, moveState.query), [folderTree, moveState.query]);

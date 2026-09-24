@@ -1,4 +1,4 @@
-import { Bookmark, ChevronRight, ChevronsDown, ChevronsUp, Copy, FolderPlus, Info, Link2, MoveRight, Pencil, Play, Trash2 } from 'lucide-react';
+import { Bookmark, ChevronRight, Copy, FilePenLine, FolderPlus, Info, Move, Pencil, Play, SquareMinus, SquarePlus, Star, Trash2 } from 'lucide-react';
 
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { isProtectedNode } from '@/lib/bookmark-service';
@@ -54,20 +54,20 @@ export function ItemMenuContent({
   const compactMenu = compact;
   const menuButtonClass = compactMenu
     ? 'h-7 rounded-lg px-2 text-[11px] font-medium'
-    : 'h-8 rounded-xl px-2.5 text-xs font-medium';
+    : 'h-8 rounded-md px-2.5 text-xs font-medium';
   const menuIconClass = compactMenu ? 'size-3.5' : 'size-4';
 
   if (node.url) {
     return (
       <>
         {deferredSearch && node.parentId ? (
-          <DropdownMenuItem onSelect={() => onShowLocation(node)} className={menuButtonClass}>
+          <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
             <ChevronRight className={menuIconClass} />
             显示位置
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onCopyUrl(node.url!);
           }}
@@ -77,7 +77,7 @@ export function ItemMenuContent({
           复制链接
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onEditBookmark(node, node.parentId ?? currentFolderId);
           }}
@@ -87,7 +87,7 @@ export function ItemMenuContent({
           编辑书签
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onOpenDetails(node);
           }}
@@ -97,16 +97,16 @@ export function ItemMenuContent({
           查看详情
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onMove(node.id);
           }}
           className={menuButtonClass}
         >
-          <MoveRight className={menuIconClass} />
+          <Move className={menuIconClass} />
           移动
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onDelete(node.id)} variant="destructive" className={menuButtonClass}>
+        <DropdownMenuItem onClick={() => onDelete(node.id)} variant="destructive" className={menuButtonClass}>
           <Trash2 className={menuIconClass} />
           删除
         </DropdownMenuItem>
@@ -117,7 +117,7 @@ export function ItemMenuContent({
   return (
     <>
       <DropdownMenuItem
-        onSelect={() => {
+        onClick={() => {
           onClose();
           onOpenAll(node.id);
         }}
@@ -127,45 +127,49 @@ export function ItemMenuContent({
         打开全部
       </DropdownMenuItem>
       {deferredSearch && node.parentId ? (
-        <DropdownMenuItem onSelect={() => onShowLocation(node)} className={menuButtonClass}>
+        <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
           <ChevronRight className={menuIconClass} />
           显示位置
         </DropdownMenuItem>
       ) : null}
-      <DropdownMenuItem
-        onSelect={() => {
-          onClose();
-          onCreateFolder(node.id);
-        }}
-        className={menuButtonClass}
-      >
-        <FolderPlus className={menuIconClass} />
-        新建文件夹
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        onSelect={() => {
-          onClose();
-          onCreateBookmark(node.id);
-        }}
-        className={menuButtonClass}
-      >
-        <Link2 className={menuIconClass} />
-        添加书签
-      </DropdownMenuItem>
-      {hasLaunchContext ? (
-        <DropdownMenuItem
-          onSelect={() => {
-            onClose();
-            onSaveLaunchToFolder(node.id);
-          }}
-          className={menuButtonClass}
-        >
-          <Bookmark className={menuIconClass} />
-          {hasLaunchBookmark ? '编辑当前页面' : '添加当前页面'}
-        </DropdownMenuItem>
+      {displayMode === 'tree' ? (
+        <>
+          <DropdownMenuItem
+            onClick={() => {
+              onClose();
+              onCreateFolder(node.id);
+            }}
+            className={menuButtonClass}
+          >
+            <FolderPlus className={menuIconClass} />
+            新建文件夹
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              onClose();
+              onCreateBookmark(node.id);
+            }}
+            className={menuButtonClass}
+          >
+            <Bookmark className={menuIconClass} />
+            添加书签
+          </DropdownMenuItem>
+          {hasLaunchContext ? (
+            <DropdownMenuItem
+              onClick={() => {
+                onClose();
+                onSaveLaunchToFolder(node.id);
+              }}
+              className={menuButtonClass}
+            >
+              {hasLaunchBookmark ? <FilePenLine className={menuIconClass} /> : <Star className={menuIconClass} />}
+              {hasLaunchBookmark ? '编辑当前页面' : '添加当前页面'}
+            </DropdownMenuItem>
+          ) : null}
+        </>
       ) : null}
       <DropdownMenuItem
-        onSelect={() => {
+        onClick={() => {
           onClose();
           onOpenDetails(node);
         }}
@@ -176,31 +180,31 @@ export function ItemMenuContent({
       </DropdownMenuItem>
       {displayMode === 'tree' ? (
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onExpandFolderRecursively(node);
           }}
           className={menuButtonClass}
         >
-          <ChevronsDown className={menuIconClass} />
+          <SquarePlus className={menuIconClass} />
           递归展开
         </DropdownMenuItem>
       ) : null}
       {displayMode === 'tree' ? (
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onCollapseFolderRecursively(node);
           }}
           className={menuButtonClass}
         >
-          <ChevronsUp className={menuIconClass} />
+          <SquareMinus className={menuIconClass} />
           递归折叠
         </DropdownMenuItem>
       ) : null}
       {!protectedNode ? (
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onRenameFolder(node, node.parentId ?? currentFolderId);
           }}
@@ -212,18 +216,18 @@ export function ItemMenuContent({
       ) : null}
       {!protectedNode ? (
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             onClose();
             onMove(node.id);
           }}
           className={menuButtonClass}
         >
-          <MoveRight className={menuIconClass} />
+          <Move className={menuIconClass} />
           移动
         </DropdownMenuItem>
       ) : null}
       {!protectedNode ? (
-        <DropdownMenuItem onSelect={() => onDelete(node.id)} variant="destructive" className={menuButtonClass}>
+        <DropdownMenuItem onClick={() => onDelete(node.id)} variant="destructive" className={menuButtonClass}>
           <Trash2 className={menuIconClass} />
           删除
         </DropdownMenuItem>

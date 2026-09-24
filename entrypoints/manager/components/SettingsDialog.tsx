@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { InsertSettings, ViewSettings } from '@/lib/bookmark-service';
 
 type SettingsDialogProps = {
@@ -14,126 +15,74 @@ type SettingsDialogProps = {
   onNormalize: () => void;
 };
 
+type ChoiceProps = {
+  label: string;
+  value: string;
+  choices: { value: string; label: string }[];
+  onChange: (value: string) => void;
+};
+
+function SettingChoice({ label, value, choices, onChange }: ChoiceProps) {
+  return (
+    <div className="space-y-2">
+      <div className="text-sm font-medium">{label}</div>
+      <ToggleGroup
+        value={[value]}
+        onValueChange={(values) => {
+          if (values[0]) onChange(values[0]);
+        }}
+        variant="outline"
+        spacing={2}
+        className="grid w-full grid-cols-2"
+        aria-label={label}
+      >
+        {choices.map((choice) => (
+          <ToggleGroupItem key={choice.value} value={choice.value} className="w-full cursor-pointer">
+            {choice.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </div>
+  );
+}
+
+const booleanChoices = [
+  { value: 'true', label: '逐层返回' },
+  { value: 'false', label: '关闭' },
+];
+const densityChoices = [
+  { value: 'false', label: '正常' },
+  { value: 'true', label: '紧凑' },
+];
+const positionChoices = [
+  { value: 'top', label: '同类顶部' },
+  { value: 'bottom', label: '同类底部' },
+];
+
 export function SettingsDialog({
-  open,
-  onOpenChange,
-  settings,
-  viewSettings,
-  onChange,
-  onViewChange,
-  normalizing,
-  onNormalize,
+  open, onOpenChange, settings, viewSettings, onChange, onViewChange, normalizing, onNormalize,
 }: SettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined} className="rounded-[1.5rem] p-4">
-        <DialogHeader>
-          <DialogTitle>全局设置</DialogTitle>
-        </DialogHeader>
-        <div className="mt-4 space-y-4">
-          <div className="space-y-2">
-            <div className="text-sm font-medium">列表模式返回键</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: false, label: '关闭' },
-                { value: true, label: '逐层返回' },
-              ].map((option) => (
-                <button
-                  key={`list-back-navigation-${String(option.value)}`}
-                  type="button"
-                  onClick={() => onViewChange({ ...viewSettings, listBackNavigation: option.value })}
-                  className={cn(
-                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
-                    viewSettings.listBackNavigation === option.value && 'border-primary bg-primary/8 text-primary',
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+      <DialogContent aria-describedby={undefined} className="flex max-h-[calc(var(--app-height)-2rem)] min-h-0 flex-col">
+        <DialogHeader><DialogTitle>全局设置</DialogTitle></DialogHeader>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-4 p-1">
+            <SettingChoice label="列表模式返回键" value={String(viewSettings.listBackNavigation)} choices={booleanChoices}
+              onChange={(value) => onViewChange({ ...viewSettings, listBackNavigation: value === 'true' })} />
+            <SettingChoice label="列表模式密度" value={String(viewSettings.listCompact)} choices={densityChoices}
+              onChange={(value) => onViewChange({ ...viewSettings, listCompact: value === 'true' })} />
+            <SettingChoice label="树形模式密度" value={String(viewSettings.treeCompact)} choices={densityChoices}
+              onChange={(value) => onViewChange({ ...viewSettings, treeCompact: value === 'true' })} />
+            <SettingChoice label="文件夹插入位置" value={settings.folderPosition} choices={positionChoices}
+              onChange={(value) => onChange({ ...settings, folderPosition: value as InsertSettings['folderPosition'] })} />
+            <SettingChoice label="书签插入位置" value={settings.bookmarkPosition} choices={positionChoices}
+              onChange={(value) => onChange({ ...settings, bookmarkPosition: value as InsertSettings['bookmarkPosition'] })} />
           </div>
-          <div className="space-y-2">
-            <div className="text-sm font-medium">列表模式密度</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: false, label: '正常' },
-                { value: true, label: '紧凑' },
-              ].map((option) => (
-                <button
-                  key={`list-compact-${String(option.value)}`}
-                  type="button"
-                  onClick={() => onViewChange({ ...viewSettings, listCompact: option.value })}
-                  className={cn(
-                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
-                    viewSettings.listCompact === option.value && 'border-primary bg-primary/8 text-primary',
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-sm font-medium">树形模式密度</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: false, label: '正常' },
-                { value: true, label: '紧凑' },
-              ].map((option) => (
-                <button
-                  key={`tree-compact-${String(option.value)}`}
-                  type="button"
-                  onClick={() => onViewChange({ ...viewSettings, treeCompact: option.value })}
-                  className={cn(
-                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
-                    viewSettings.treeCompact === option.value && 'border-primary bg-primary/8 text-primary',
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-sm font-medium">文件夹插入位置</div>
-            <div className="grid grid-cols-2 gap-2">
-              {(['top', 'bottom'] as const).map((position) => (
-                <button
-                  key={`folder-${position}`}
-                  type="button"
-                  onClick={() => onChange({ ...settings, folderPosition: position })}
-                  className={cn(
-                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
-                    settings.folderPosition === position && 'border-primary bg-primary/8 text-primary',
-                  )}
-                >
-                  {position === 'top' ? '同类顶部' : '同类底部'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-sm font-medium">书签插入位置</div>
-            <div className="grid grid-cols-2 gap-2">
-              {(['top', 'bottom'] as const).map((position) => (
-                <button
-                  key={`bookmark-${position}`}
-                  type="button"
-                  onClick={() => onChange({ ...settings, bookmarkPosition: position })}
-                  className={cn(
-                    'flex h-9 items-center justify-center rounded-xl border text-sm active:bg-muted',
-                    settings.bookmarkPosition === position && 'border-primary bg-primary/8 text-primary',
-                  )}
-                >
-                  {position === 'top' ? '同类顶部' : '同类底部'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <Button className="h-10 w-full rounded-xl" disabled={normalizing} onClick={onNormalize}>
-            {normalizing ? '规范化中...' : '规范化全部文件夹'}
-          </Button>
-        </div>
+        </ScrollArea>
+        <Button className="w-full" disabled={normalizing} onClick={onNormalize}>
+          {normalizing ? '规范化中...' : '规范化全部文件夹'}
+        </Button>
       </DialogContent>
     </Dialog>
   );

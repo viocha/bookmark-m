@@ -1,7 +1,7 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/toast';
 import {
   captureDeletedNodes,
   deleteNodes,
@@ -377,21 +377,23 @@ export default function App() {
       safeCallWithTimeout<BookmarkDisplayMode>(() => getDisplayMode(), 'list'),
       safeCallWithTimeout<string[]>(() => getTreeExpandedIds(), []),
       safeCallWithTimeout<InsertSettings>(() => getInsertSettings(), {
-        folderPosition: 'bottom',
-        bookmarkPosition: 'bottom',
+        folderPosition: 'top',
+        bookmarkPosition: 'top',
       }),
       safeCallWithTimeout<ViewSettings>(() => getViewSettings(), {
         listCompact: false,
-        treeCompact: true,
-        listBackNavigation: false,
+        treeCompact: false,
+        listBackNavigation: true,
       }),
-    ]).then(([positions, mode, treeExpandedIds, settings, viewSettings]) => {
+      getRecentFolders(),
+    ]).then(([positions, mode, treeExpandedIds, settings, viewSettings, recentFolders]) => {
       if (cancelled) return;
       state.scrollPositionsRef.current = positions;
       state.setDisplayModeState(mode);
       state.setExpandedTreeIds(treeExpandedIds);
       state.setInsertSettingsState(settings);
       state.setViewSettingsState(viewSettings);
+      state.setRecentFolders(recentFolders);
       void navigation.reload();
     });
 
@@ -404,6 +406,7 @@ export default function App() {
     state.setDisplayModeState,
     state.setExpandedTreeIds,
     state.setInsertSettingsState,
+    state.setRecentFolders,
     state.setViewSettingsState,
   ]);
 
@@ -615,14 +618,6 @@ export default function App() {
   }, [state.launchContext, state.setLaunchBookmark]);
 
   useEffect(() => {
-    if (!state.bookmarkComposer.open) return;
-
-    void getRecentFolders().then((folders) => {
-      state.setRecentFolders(folders);
-    });
-  }, [state.bookmarkComposer.open, state.setRecentFolders]);
-
-  useEffect(() => {
     const handleChange = () => {
       void navigation.reload();
     };
@@ -697,8 +692,12 @@ export default function App() {
     };
   }, [state.currentFolderId, state.deferredSearch, state.setSearchPaths, state.setSearchResults, state.setSearching]);
 
+  if (state.loading) {
+    return <div className="h-[var(--app-height)] bg-background" />;
+  }
+
   return (
-    <div className="flex h-[var(--app-height)] flex-col overflow-hidden bg-[linear-gradient(180deg,#fbf4e8_0%,#f2e7d6_100%)] text-foreground">
+    <div className="flex h-[var(--app-height)] flex-col overflow-hidden bg-background text-foreground">
       <ManagerToolbar
         toolsMenuRef={state.toolsMenuRef}
         pageTitle={navigation.pageTitle}
@@ -802,6 +801,7 @@ export default function App() {
         folderComposer={state.folderComposer}
         onFolderComposerOpenChange={(open) => state.setFolderComposer((current) => ({ ...current, open }))}
         onFolderComposerTitleChange={(title) => state.setFolderComposer((current) => ({ ...current, title }))}
+        onFolderComposerPositionChange={(position) => state.setFolderComposer((current) => ({ ...current, position }))}
         onSubmitFolder={() => void editor.submitFolder()}
         bookmarkComposer={state.bookmarkComposer}
         bookmarkComposerFolderName={editor.bookmarkComposerFolderName}
@@ -819,14 +819,15 @@ export default function App() {
             targetFolderId: state.bookmarkComposer.parentId,
           });
         }}
-        onBookmarkComposerToggleRecentFolders={() => {
-          state.setBookmarkComposer((current) => ({ ...current, recentOpen: !current.recentOpen }));
+        onBookmarkComposerRecentOpenChange={(open) => {
+          state.setBookmarkComposer((current) => ({ ...current, recentOpen: open }));
         }}
         onBookmarkComposerPickRecentFolder={(folderId) => {
           state.setBookmarkComposer((current) => ({ ...current, parentId: folderId, recentOpen: false }));
         }}
         onBookmarkComposerTitleChange={(title) => state.setBookmarkComposer((current) => ({ ...current, title }))}
         onBookmarkComposerUrlChange={(url) => state.setBookmarkComposer((current) => ({ ...current, url }))}
+        onBookmarkComposerPositionChange={(position) => state.setBookmarkComposer((current) => ({ ...current, position }))}
         onBookmarkComposerRevealLocation={() => {
           state.setBookmarkComposer((current) => ({ ...current, open: false, recentOpen: false }));
           void navigation.goToFolder(state.bookmarkComposer.parentId);

@@ -1,4 +1,4 @@
-import { Bookmark, FolderPlus, MoreHorizontal, Plus, Settings2, SquareCheckBig } from 'lucide-react';
+import { Bookmark, FilePenLine, FolderPlus, MoreHorizontal, Settings2, SquareCheckBig, Star } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { cn } from '@/lib/utils';
 import type { BookmarkDisplayMode, LaunchContext } from '@/lib/bookmark-service';
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
-import { useTouchDropdownTrigger } from '../hooks/useTouchDropdownTrigger';
 
 type HeaderToolsMenuProps = {
   displayMode: BookmarkDisplayMode;
@@ -48,30 +47,22 @@ export function HeaderToolsMenu({
     setOpen(false);
   }, []);
   useImmediateMenuDismiss({ open, onClose: closeMenu, triggerRef, contentRef });
-  const touchMenuTriggerProps = useTouchDropdownTrigger({
-    onToggle: () => {
-      setOpen((currentOpen) => !currentOpen);
-    },
-  });
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
+      <DropdownMenuTrigger render={<Button
           ref={triggerRef}
           variant="outline"
           size="icon"
-          {...touchMenuTriggerProps}
           className={cn('size-8 rounded-full', open && 'bg-muted/60 text-foreground')}
-        >
+        />}>
           <MoreHorizontal className="size-4" />
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         ref={contentRef}
         align="end"
         side="bottom"
-        className="z-[90] w-56 rounded-2xl p-1 shadow-xl"
+        className="z-[90] w-56 rounded-lg p-1 shadow-xl"
       >
         <div className="mb-1 grid grid-cols-2 gap-1">
           <button
@@ -81,7 +72,7 @@ export function HeaderToolsMenu({
               onSwitchMode('list');
             }}
             className={cn(
-              'flex h-8 touch-manipulation items-center justify-center rounded-xl text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
+              'flex h-8 touch-manipulation items-center justify-center rounded-md text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
               displayMode === 'list' ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground',
             )}
           >
@@ -94,65 +85,69 @@ export function HeaderToolsMenu({
               onSwitchMode('tree');
             }}
             className={cn(
-              'flex h-8 touch-manipulation items-center justify-center rounded-xl text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
+              'flex h-8 touch-manipulation items-center justify-center rounded-md text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
               displayMode === 'tree' ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground',
             )}
           >
             树形
           </button>
         </div>
-        {hasLaunchContext ? (
+        {displayMode === 'list' && hasLaunchContext ? (
           <DropdownMenuItem
-            disabled={displayMode === 'list' ? toolsDisabledOnHome : false}
-            onSelect={() => {
+            disabled={toolsDisabledOnHome}
+            onClick={() => {
               closeMenu();
               onSaveLaunch();
             }}
-            className="h-8 rounded-xl px-2.5 text-xs font-medium"
+            className="h-8 rounded-md px-2.5 text-xs font-medium"
           >
-            <Bookmark className="size-4" />
+            {hasLaunchBookmark ? <FilePenLine className="size-4" /> : <Star className="size-4" />}
             {hasLaunchBookmark ? '编辑当前页面' : '添加当前页面'}
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem
-          disabled={displayMode === 'tree' || toolsDisabledOnHome || !canCreateInCurrentFolder}
-          onSelect={() => {
-            closeMenu();
-            onCreateFolder();
-          }}
-          className="h-8 rounded-xl px-2.5 text-xs font-medium"
-        >
-          <FolderPlus className="size-4" />
-          新建文件夹
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={displayMode === 'tree' || toolsDisabledOnHome || !canCreateInCurrentFolder}
-          onSelect={() => {
-            closeMenu();
-            onCreateBookmark();
-          }}
-          className="h-8 rounded-xl px-2.5 text-xs font-medium"
-        >
-          <Plus className="size-4" />
-          添加书签
-        </DropdownMenuItem>
+        {displayMode === 'list' ? (
+          <>
+            <DropdownMenuItem
+              disabled={toolsDisabledOnHome || !canCreateInCurrentFolder}
+              onClick={() => {
+                closeMenu();
+                onCreateFolder();
+              }}
+              className="h-8 rounded-md px-2.5 text-xs font-medium"
+            >
+              <FolderPlus className="size-4" />
+              新建文件夹
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={toolsDisabledOnHome || !canCreateInCurrentFolder}
+              onClick={() => {
+                closeMenu();
+                onCreateBookmark();
+              }}
+              className="h-8 rounded-md px-2.5 text-xs font-medium"
+            >
+              <Bookmark className="size-4" />
+              添加书签
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuItem
           disabled={toolsDisabledOnHome || selectableCount === 0 || searching}
-          onSelect={() => {
+          onClick={() => {
             closeMenu();
             onSelectMode();
           }}
-          className="h-8 rounded-xl px-2.5 text-xs font-medium"
+          className="h-8 rounded-md px-2.5 text-xs font-medium"
         >
           <SquareCheckBig className="size-4" />
           选择项目
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => {
+          onClick={() => {
             closeMenu();
             onOpenSettings();
           }}
-          className="h-8 rounded-xl px-2.5 text-xs font-medium"
+          className="h-8 rounded-md px-2.5 text-xs font-medium"
         >
           <Settings2 className="size-4" />
           全局设置

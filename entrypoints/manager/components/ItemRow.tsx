@@ -7,7 +7,6 @@ import { getDisplayTitle, isFolder } from '@/lib/bookmark-service';
 import { cn } from '@/lib/utils';
 
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
-import { useTouchDropdownTrigger } from '../hooks/useTouchDropdownTrigger';
 import { getBookmarkMeta, getFaviconUrl } from '../utils';
 
 type ItemRowProps = {
@@ -60,14 +59,9 @@ export function ItemRow({
     setMenuOpen(false);
   }, []);
   useImmediateMenuDismiss({ open: menuOpen, onClose: closeMenu, triggerRef, contentRef });
-  const touchMenuTriggerProps = useTouchDropdownTrigger({
-    onToggle: () => {
-      setMenuOpen((currentOpen) => !currentOpen);
-    },
-  });
 
   const rowClassName = cn(
-    'block min-w-0 max-w-full flex-1 touch-manipulation text-left text-foreground',
+    'block min-w-0 max-w-full flex-1 touch-manipulation select-none text-left text-foreground',
     compact && 'py-0.5',
   );
 
@@ -107,36 +101,53 @@ export function ItemRow({
   );
 
   return (
-    <div ref={wrapperRef} style={wrapperStyle} className={cn('relative', wrapperClassName)} data-item-menu data-item-node-id={node.id}>
+    <div ref={wrapperRef} style={wrapperStyle} className={cn('relative select-none [-webkit-touch-callout:none]', wrapperClassName)} data-item-menu data-item-node-id={node.id}>
       <div
         className={cn(
-          'flex items-center gap-2 rounded-2xl border bg-white/88 px-2.5 shadow-sm',
+          'flex items-center gap-2 rounded-lg border bg-card px-2.5 shadow-sm',
           treeRow && !compact && 'gap-1.5',
-          compact ? 'min-h-7 gap-0 rounded-xl px-1.5 py-1' : folder ? (searchPath ? 'min-h-14 py-2.5' : 'min-h-11 py-2') : 'min-h-14 py-2.5',
-          selected && 'border-primary bg-primary/8',
-          highlighted && 'border-primary/70 bg-primary/12 shadow-[0_0_0_2px_rgba(221,109,54,0.14)]',
+          compact ? 'min-h-7 gap-0 rounded-md px-1.5 py-1' : folder ? (searchPath ? 'min-h-14 py-2.5' : 'min-h-11 py-2') : 'min-h-14 py-2.5',
+          selected && 'border-primary bg-accent',
+          highlighted && 'border-primary/70 bg-accent ring-2 ring-ring/50',
         )}
       >
-        <div
-          className={cn(
-            'flex shrink-0 items-center justify-center rounded-xl',
-            compact ? 'size-6 rounded-lg' : folder ? 'size-8' : 'size-9',
-            folder ? 'bg-primary/12 text-primary' : 'bg-secondary text-secondary-foreground',
-          )}
-        >
-          {folder ? (
-            <Folder className={cn(compact ? 'size-3.5' : 'size-4')} />
-          ) : (
-            <img
-              src={node.url ? getFaviconUrl(node.url) : undefined}
-              alt=""
-              className={cn(compact ? 'size-3.5 rounded-[3px]' : 'size-4 rounded')}
-              onError={(event) => {
-                (event.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          )}
-        </div>
+        {treeRow && folder ? (
+          <button
+            type="button"
+            aria-label={expanded ? '折叠文件夹' : '展开文件夹'}
+            aria-expanded={expanded}
+            disabled={!onToggleExpand}
+            onClick={onToggleExpand}
+            className={cn(
+              'flex shrink-0 touch-manipulation items-center justify-center text-muted-foreground',
+              compact ? 'size-6' : 'size-8',
+              onToggleExpand && 'cursor-pointer',
+            )}
+          >
+            {expanded ? <ChevronDown className={cn(compact ? 'size-3.5' : 'size-4')} /> : <ChevronRight className={cn(compact ? 'size-3.5' : 'size-4')} />}
+          </button>
+        ) : (
+          <div
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-md',
+              compact ? 'size-6 rounded-lg' : folder ? 'size-8' : 'size-9',
+              folder ? 'bg-accent text-primary' : 'bg-secondary text-secondary-foreground',
+            )}
+          >
+            {folder ? (
+              <Folder className={cn(compact ? 'size-3.5' : 'size-4')} />
+            ) : (
+              <img
+                src={node.url ? getFaviconUrl(node.url) : undefined}
+                alt=""
+                className={cn(compact ? 'size-3.5 rounded-sm' : 'size-4 rounded')}
+                onError={(event) => {
+                  (event.currentTarget as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            )}
+          </div>
+        )}
 
         {compact ? (
           <div
@@ -146,20 +157,6 @@ export function ItemRow({
               !treeRow && !onToggleExpand && 'mx-1.5',
             )}
           >
-            {folder && onToggleExpand ? (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onToggleExpand?.();
-                }}
-                className="flex size-3.5 shrink-0 touch-manipulation items-center justify-center text-muted-foreground"
-              >
-                {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
-              </button>
-            ) : treeRow ? (
-              <span aria-hidden className="block size-3.5 shrink-0" />
-            ) : null}
             <button
               type="button"
               {...contentButtonProps}
@@ -173,20 +170,6 @@ export function ItemRow({
           </div>
         ) : (
           <div className="flex min-w-0 max-w-full flex-1 items-center gap-1.5">
-            {folder && onToggleExpand ? (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onToggleExpand();
-                }}
-                className="flex size-4 shrink-0 touch-manipulation items-center justify-center text-muted-foreground"
-              >
-                {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-              </button>
-            ) : treeRow ? (
-              <span aria-hidden className="block size-4 shrink-0" />
-            ) : null}
             <button
               type="button"
               {...contentButtonProps}
@@ -207,28 +190,25 @@ export function ItemRow({
               setMenuOpen(nextOpen);
             }}
           >
-            <DropdownMenuTrigger asChild>
-              <button
+            <DropdownMenuTrigger render={<button
                 ref={triggerRef}
                 type="button"
                 data-item-menu-button
-                {...touchMenuTriggerProps}
                 className={cn(
                   compact
                     ? 'flex size-6 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]'
                     : 'flex size-8 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]',
                   menuOpen && 'bg-muted text-foreground',
                 )}
-              >
+              />}>
                 <MoreHorizontal className={cn(compact ? 'size-3.5' : 'size-4')} />
-              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               ref={contentRef}
               align="end"
               side="bottom"
-              collisionPadding={8}
-              className={cn(compact ? 'w-32 rounded-lg p-0.5' : 'w-36 rounded-2xl p-1')}
+
+              className={cn(compact ? 'w-32 rounded-lg p-0.5' : 'w-36 rounded-lg p-1')}
             >
               {menuContent?.(closeMenu)}
             </DropdownMenuContent>

@@ -326,13 +326,13 @@ export function ManagerContent({
         <ScrollArea className="h-full">
           <div className={cn(currentCompact ? 'p-2' : 'p-3')}>
             {errorMessage ? (
-              <section className="mb-3 rounded-2xl border border-destructive/35 bg-destructive/8 px-3 py-3 text-sm text-destructive">
+              <section className="mb-3 rounded-lg border border-destructive/35 bg-destructive/8 px-3 py-3 text-sm text-destructive">
                 {errorMessage}
               </section>
             ) : null}
 
             {(isTreeMode ? roots.length === 0 : visibleNodes.length === 0) ? (
-              <div className="rounded-2xl border bg-white/86 px-3 py-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-lg border bg-card px-3 py-6 text-center text-sm text-muted-foreground">
                 {deferredSearch ? (searching ? '正在搜索…' : '没有找到匹配的书签。') : loading ? '' : '这个文件夹是空的。'}
               </div>
             ) : (
@@ -388,7 +388,7 @@ export function ManagerContent({
                 )}
                 <DragOverlay dropAnimation={null}>
                   {activeDragNode ? (
-                    <div className="scale-[1.01] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.45)]">
+                    <div className="scale-[1.01] shadow-lg">
                       <ItemRow
                         node={activeDragNode}
                         folderChildCount={folderChildCounts[activeDragNode.id]}
