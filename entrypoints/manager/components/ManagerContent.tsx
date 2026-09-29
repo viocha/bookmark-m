@@ -223,6 +223,8 @@ export function ManagerContent({
   const [treeOrderedRoots, setTreeOrderedRoots] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const suppressClickRef = useRef<string | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [searchPage, setSearchPage] = useState({ query: '', limit: 60 });
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
@@ -252,6 +254,29 @@ export function ManagerContent({
     const nodeMap = new Map(visibleNodes.map((node) => [node.id, node]));
     return orderedIds.map((id) => nodeMap.get(id)).filter((node): node is chrome.bookmarks.BookmarkTreeNode => Boolean(node));
   }, [orderedIds, visibleNodes]);
+  const searchLimit = searchPage.query === deferredSearch ? searchPage.limit : 60;
+  const renderedNodes = searchActive ? orderedVisibleNodes.slice(0, searchLimit) : orderedVisibleNodes;
+
+  useEffect(() => {
+    setSearchPage({ query: deferredSearch, limit: 60 });
+  }, [deferredSearch]);
+
+  useEffect(() => {
+    if (!searchActive || renderedNodes.length >= orderedVisibleNodes.length) return;
+    const sentinel = loadMoreRef.current;
+    const viewport = scrollAreaRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+    if (!sentinel || !viewport) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setSearchPage((current) => ({
+          query: deferredSearch,
+          limit: (current.query === deferredSearch ? current.limit : 60) + 60,
+        }));
+      }
+    }, { root: viewport, rootMargin: '200px' });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [deferredSearch, orderedVisibleNodes.length, renderedNodes.length, scrollAreaRef, searchActive]);
 
   const activeDragNode = useMemo(
     () => orderedVisibleNodes.find((node) => node.id === activeDragId) ?? findTreeNode(treeOrderedRoots, activeDragId ?? ''),
@@ -361,7 +386,7 @@ export function ManagerContent({
                 ) : (
                   <div className={cn(listCompact ? 'space-y-0.5' : 'space-y-1')}>
                     <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
-                      {orderedVisibleNodes.map((node) => (
+                      {renderedNodes.map((node) => (
                         <SortableListRow
                           key={node.id}
                           node={node}
@@ -384,6 +409,9 @@ export function ManagerContent({
                         />
                       ))}
                     </SortableContext>
+                    {searchActive && renderedNodes.length < orderedVisibleNodes.length ? (
+                      <div ref={loadMoreRef} className="h-1" aria-hidden="true" />
+                    ) : null}
                   </div>
                 )}
                 <DragOverlay dropAnimation={null}>

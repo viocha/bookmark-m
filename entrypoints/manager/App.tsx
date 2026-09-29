@@ -137,6 +137,19 @@ export default function App() {
     () => (state.deferredSearch ? state.searchResults : state.currentChildren),
     [state.currentChildren, state.deferredSearch, state.searchResults],
   );
+  const folderPaths = useMemo(() => {
+    const paths = new Map<string, string>();
+    const visit = (nodes: chrome.bookmarks.BookmarkTreeNode[], parentPath: string) => {
+      for (const node of nodes) {
+        if (node.url) continue;
+        const path = parentPath ? `${parentPath} / ${getDisplayTitle(node)}` : getDisplayTitle(node);
+        paths.set(node.id, path);
+        visit(node.children ?? [], path);
+      }
+    };
+    visit(state.roots, '');
+    return paths;
+  }, [state.roots]);
   const selectableNodes = useMemo(
     () =>
       state.displayMode === 'tree' && !state.deferredSearch ? flattenTreeNodes(state.roots) : visibleNodes,
@@ -659,18 +672,12 @@ export default function App() {
     }
 
     state.setSearching(true);
+    state.setSearchResults([]);
+    state.setSearchPaths({});
     void searchNodes(state.deferredSearch)
-      .then(async (results) => {
+      .then((results) => {
         const sorted = sortFoldersFirst(results);
-        const pathEntries = await Promise.all(
-          sorted.map(async (node) => {
-            const parentId = node.parentId;
-            const parentPath = parentId && parentId !== '0'
-              ? await safeCall(() => getFolderPath(parentId), '根目录')
-              : '根目录';
-            return [node.id, parentPath] as const;
-          }),
-        );
+        const pathEntries = sorted.map((node) => [node.id, folderPaths.get(node.parentId ?? '') ?? '根目录'] as const);
 
         if (cancelled) return;
 
@@ -690,7 +697,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [state.currentFolderId, state.deferredSearch, state.setSearchPaths, state.setSearchResults, state.setSearching]);
+  }, [folderPaths, state.currentFolderId, state.deferredSearch, state.setSearchPaths, state.setSearchResults, state.setSearching]);
 
   if (state.loading) {
     return <div className="h-[var(--app-height)] bg-background" />;

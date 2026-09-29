@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   setSavedScrollPositions,
@@ -38,6 +38,7 @@ export function useManagerPageState() {
   const [recentFolders, setRecentFolders] = useState<RecentFolder[]>([]);
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deferredSearch, setDeferredSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
   const [searchPaths, setSearchPaths] = useState<Record<string, string>>({});
@@ -94,7 +95,15 @@ export function useManagerPageState() {
     targetFolderId: '1',
   });
 
-  const deferredSearch = useDeferredValue(searchQuery.trim());
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      setDeferredSearch('');
+      return;
+    }
+    const timer = window.setTimeout(() => setDeferredSearch(query), 500);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     currentFolderIdRef.current = currentFolderId;
