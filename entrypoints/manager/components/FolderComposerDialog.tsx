@@ -9,6 +9,7 @@ import { InsertPositionPicker } from './InsertPositionPicker';
 type FolderComposerDialogProps = {
   state: FolderComposerState;
   onOpenChange: (open: boolean) => void;
+  onOpenChangeComplete: (open: boolean) => void;
   onTitleChange: (title: string) => void;
   onPositionChange: (position: InsertPosition) => void;
   onSubmit: () => void;
@@ -17,12 +18,13 @@ type FolderComposerDialogProps = {
 export function FolderComposerDialog({
   state,
   onOpenChange,
+  onOpenChangeComplete,
   onTitleChange,
   onPositionChange,
   onSubmit,
 }: FolderComposerDialogProps) {
   return (
-    <Dialog open={state.open} onOpenChange={onOpenChange}>
+    <Dialog open={state.open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
       <DialogContent aria-describedby={undefined} className="rounded-md p-4">
         <DialogHeader>
           <DialogTitle>{state.mode === 'create' ? '新建文件夹' : '重命名文件夹'}</DialogTitle>

@@ -7,6 +7,7 @@ import { FolderComposerDialog } from './FolderComposerDialog';
 type BookmarkEditorDialogsProps = {
   folderComposer: FolderComposerState;
   onFolderComposerOpenChange: (open: boolean) => void;
+  onFolderComposerOpenChangeComplete: (open: boolean) => void;
   onFolderComposerTitleChange: (title: string) => void;
   onFolderComposerPositionChange: (position: InsertPosition) => void;
   onSubmitFolder: () => void;
@@ -14,6 +15,7 @@ type BookmarkEditorDialogsProps = {
   bookmarkComposerFolderName: string;
   recentFolders: RecentFolder[];
   onBookmarkComposerOpenChange: (open: boolean) => void;
+  onBookmarkComposerOpenChangeComplete: (open: boolean) => void;
   onBookmarkComposerPickParent: () => void;
   onBookmarkComposerRecentOpenChange: (open: boolean) => void;
   onBookmarkComposerPickRecentFolder: (folderId: string) => void;
@@ -30,6 +32,7 @@ type BookmarkEditorDialogsProps = {
 export function BookmarkEditorDialogs({
   folderComposer,
   onFolderComposerOpenChange,
+  onFolderComposerOpenChangeComplete,
   onFolderComposerTitleChange,
   onFolderComposerPositionChange,
   onSubmitFolder,
@@ -37,6 +40,7 @@ export function BookmarkEditorDialogs({
   bookmarkComposerFolderName,
   recentFolders,
   onBookmarkComposerOpenChange,
+  onBookmarkComposerOpenChangeComplete,
   onBookmarkComposerPickParent,
   onBookmarkComposerRecentOpenChange,
   onBookmarkComposerPickRecentFolder,
@@ -54,6 +58,7 @@ export function BookmarkEditorDialogs({
       <FolderComposerDialog
         state={folderComposer}
         onOpenChange={onFolderComposerOpenChange}
+        onOpenChangeComplete={onFolderComposerOpenChangeComplete}
         onTitleChange={onFolderComposerTitleChange}
         onPositionChange={onFolderComposerPositionChange}
         onSubmit={onSubmitFolder}
@@ -64,6 +69,7 @@ export function BookmarkEditorDialogs({
         folderLabel={bookmarkComposerFolderName}
         recentFolders={recentFolders}
         onOpenChange={onBookmarkComposerOpenChange}
+        onOpenChangeComplete={onBookmarkComposerOpenChangeComplete}
         onPickParent={onBookmarkComposerPickParent}
         onRecentOpenChange={onBookmarkComposerRecentOpenChange}
         onPickRecentFolder={onBookmarkComposerPickRecentFolder}

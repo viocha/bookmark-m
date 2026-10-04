@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Folder, FolderPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { isProtectedNode, type FolderTreeNode } from '@/lib/bookmark-service';
@@ -30,12 +30,17 @@ export function MoveFolderTree({
   onDeleteFolder,
 }: MoveFolderTreeProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const selectedFolderRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const closeMenu = useCallback(() => {
     setOpenMenuId(null);
   }, []);
   useImmediateMenuDismiss({ open: openMenuId !== null, onClose: closeMenu, triggerRef, contentRef });
+
+  useLayoutEffect(() => {
+    selectedFolderRef.current?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+  }, []);
 
   const renderNodes = (treeNodes: FolderTreeNode[]): React.ReactNode =>
     treeNodes.map((folder) => {
@@ -45,6 +50,7 @@ export function MoveFolderTree({
         <div key={folder.id}>
           <div className="relative">
             <button
+              ref={targetFolderId === folder.id ? selectedFolderRef : undefined}
               type="button"
               className={cn(
                 'flex w-full touch-manipulation items-center gap-0.5 rounded-lg px-1 py-0.5 pr-10 text-left',

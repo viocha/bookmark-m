@@ -807,23 +807,24 @@ export default function App() {
       <BookmarkEditorDialogs
         folderComposer={state.folderComposer}
         onFolderComposerOpenChange={(open) => state.setFolderComposer((current) => ({ ...current, open }))}
+        onFolderComposerOpenChangeComplete={editor.onFolderComposerOpenChangeComplete}
         onFolderComposerTitleChange={(title) => state.setFolderComposer((current) => ({ ...current, title }))}
         onFolderComposerPositionChange={(position) => state.setFolderComposer((current) => ({ ...current, position }))}
         onSubmitFolder={() => void editor.submitFolder()}
         bookmarkComposer={state.bookmarkComposer}
         bookmarkComposerFolderName={editor.bookmarkComposerFolderName}
         recentFolders={state.recentFolders}
-        onBookmarkComposerOpenChange={(open) =>
-          state.setBookmarkComposer((current) => ({ ...current, open, recentOpen: open ? current.recentOpen : false }))
-        }
+        onBookmarkComposerOpenChange={(open) => state.setBookmarkComposer((current) => ({ ...current, open }))}
+        onBookmarkComposerOpenChangeComplete={editor.onBookmarkComposerOpenChangeComplete}
         onBookmarkComposerPickParent={() => {
-          state.setBookmarkComposer((current) => ({ ...current, open: false, recentOpen: false }));
-          state.setMoveState({
-            open: true,
-            mode: 'pick-bookmark-parent',
-            ids: [],
-            query: '',
-            targetFolderId: state.bookmarkComposer.parentId,
+          editor.closeBookmarkComposer(() => {
+            state.setMoveState({
+              open: true,
+              mode: 'pick-bookmark-parent',
+              ids: [],
+              query: '',
+              targetFolderId: state.bookmarkComposer.parentId,
+            });
           });
         }}
         onBookmarkComposerRecentOpenChange={(open) => {
@@ -836,12 +837,10 @@ export default function App() {
         onBookmarkComposerUrlChange={(url) => state.setBookmarkComposer((current) => ({ ...current, url }))}
         onBookmarkComposerPositionChange={(position) => state.setBookmarkComposer((current) => ({ ...current, position }))}
         onBookmarkComposerRevealLocation={() => {
-          state.setBookmarkComposer((current) => ({ ...current, open: false, recentOpen: false }));
-          void navigation.goToFolder(state.bookmarkComposer.parentId);
+          editor.closeBookmarkComposer(() => navigation.goToFolder(state.bookmarkComposer.parentId));
         }}
         onBookmarkComposerDelete={() => {
-          state.setBookmarkComposer((current) => ({ ...current, open: false, recentOpen: false }));
-          void askDelete([state.bookmarkComposer.targetId!]);
+          editor.closeBookmarkComposer(() => askDelete([state.bookmarkComposer.targetId!]));
         }}
         onSubmitBookmark={() => void editor.submitBookmark()}
         detailState={state.detailState}

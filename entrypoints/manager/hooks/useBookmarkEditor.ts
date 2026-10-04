@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
 import { toast } from '@/lib/toast';
 
 import {
@@ -61,6 +61,45 @@ export function useBookmarkEditor({
   reload,
 }: UseBookmarkEditorParams) {
   const bookmarkOpenRequestRef = useRef(0);
+  const folderAfterCloseRef = useRef<(() => void | Promise<void>) | null>(null);
+  const bookmarkAfterCloseRef = useRef<(() => void | Promise<void>) | null>(null);
+  const folderClosedRef = useRef(!folderComposer.open);
+  const bookmarkClosedRef = useRef(!bookmarkComposer.open);
+
+  useLayoutEffect(() => {
+    if (folderComposer.open) folderClosedRef.current = false;
+    if (bookmarkComposer.open) bookmarkClosedRef.current = false;
+  }, [bookmarkComposer.open, folderComposer.open]);
+
+  const closeFolderComposer = useCallback((afterClose?: () => void | Promise<void>) => {
+    folderAfterCloseRef.current = folderClosedRef.current ? null : afterClose ?? null;
+    setFolderComposer((state) => ({ ...state, open: false }));
+    if (folderClosedRef.current) void afterClose?.();
+  }, [setFolderComposer]);
+
+  const closeBookmarkComposer = useCallback((afterClose?: () => void | Promise<void>) => {
+    bookmarkAfterCloseRef.current = bookmarkClosedRef.current ? null : afterClose ?? null;
+    setBookmarkComposer((state) => ({ ...state, open: false }));
+    if (bookmarkClosedRef.current) void afterClose?.();
+  }, [setBookmarkComposer]);
+
+  const onFolderComposerOpenChangeComplete = useCallback((open: boolean) => {
+    if (open || folderComposer.open) return;
+    folderClosedRef.current = true;
+    const afterClose = folderAfterCloseRef.current;
+    folderAfterCloseRef.current = null;
+    setFolderComposer((state) => state.open ? state : ({ ...state, title: '', source: 'page' }));
+    void afterClose?.();
+  }, [folderComposer.open, setFolderComposer]);
+
+  const onBookmarkComposerOpenChangeComplete = useCallback((open: boolean) => {
+    if (open || bookmarkComposer.open) return;
+    bookmarkClosedRef.current = true;
+    const afterClose = bookmarkAfterCloseRef.current;
+    bookmarkAfterCloseRef.current = null;
+    setBookmarkComposer((state) => state.open ? state : ({ ...state, recentOpen: false }));
+    void afterClose?.();
+  }, [bookmarkComposer.open, setBookmarkComposer]);
   const openFolderComposer = useCallback((
     mode: 'create' | 'edit',
     parentId: string,
@@ -68,6 +107,7 @@ export function useBookmarkEditor({
     source: 'page' | 'move-panel' = 'page',
   ) => {
     bookmarkOpenRequestRef.current += 1;
+    folderAfterCloseRef.current = null;
     setActionTarget(null);
     setFolderComposer({
       open: true,
@@ -90,6 +130,7 @@ export function useBookmarkEditor({
     setActionTarget(null);
     const folders = await getRecentFolders();
     if (requestId !== bookmarkOpenRequestRef.current) return;
+    bookmarkAfterCloseRef.current = null;
     setRecentFolders(folders);
     setBookmarkComposer({
       open: true,
@@ -153,18 +194,18 @@ export function useBookmarkEditor({
       savedNode = await updateBookmarkNode(folderComposer.targetId, { title });
     }
 
-    if (savedNode) {
-      onFolderSaved?.({
-        mode: folderComposer.mode,
-        source: folderComposer.source ?? 'page',
-        node: savedNode,
-        parentId: folderComposer.parentId,
-      });
-    }
-
-    setFolderComposer((state) => ({ ...state, open: false, title: '', source: 'page' }));
-    await reload(currentFolderId);
-  }, [currentFolderId, folderComposer, onFolderSaved, reload, setFolderComposer]);
+    closeFolderComposer(async () => {
+      if (savedNode) {
+        onFolderSaved?.({
+          mode: folderComposer.mode,
+          source: folderComposer.source ?? 'page',
+          node: savedNode,
+          parentId: folderComposer.parentId,
+        });
+      }
+      await reload(currentFolderId);
+    });
+  }, [closeFolderComposer, currentFolderId, folderComposer, onFolderSaved, reload]);
 
   const submitBookmark = useCallback(async () => {
     const title = bookmarkComposer.title.trim();
@@ -185,17 +226,13 @@ export function useBookmarkEditor({
       savedNode = await updateBookmarkNode(bookmarkComposer.targetId, { title, url });
     }
 
-    if (launchContext?.url === url && savedNode) {
-      setLaunchBookmark({ ...savedNode, parentId: bookmarkComposer.parentId });
-    }
-
-    setBookmarkComposer((state) => ({
-      ...state,
-      open: false,
-      recentOpen: false,
-    }));
-    await reload(currentFolderId);
-  }, [bookmarkComposer, currentFolderId, insertSettingsState, launchContext, reload, setBookmarkComposer, setLaunchBookmark]);
+    closeBookmarkComposer(async () => {
+      if (launchContext?.url === url && savedNode) {
+        setLaunchBookmark({ ...savedNode, parentId: bookmarkComposer.parentId });
+      }
+      await reload(currentFolderId);
+    });
+  }, [bookmarkComposer, closeBookmarkComposer, currentFolderId, insertSettingsState, launchContext, reload, setLaunchBookmark]);
 
   const bookmarkComposerPath = useMemo(
     () => findFolderPath(folderTree, bookmarkComposer.parentId) || (bookmarkComposer.parentId === HOME_FOLDER_ID ? '首页' : ''),
@@ -214,6 +251,9 @@ export function useBookmarkEditor({
     openNodeDetails,
     submitFolder,
     submitBookmark,
+    closeBookmarkComposer,
+    onFolderComposerOpenChangeComplete,
+    onBookmarkComposerOpenChangeComplete,
     bookmarkComposerPath,
     bookmarkComposerFolderName,
   };

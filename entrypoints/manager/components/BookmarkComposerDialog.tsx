@@ -15,6 +15,7 @@ type BookmarkComposerDialogProps = {
   folderLabel: string;
   recentFolders: RecentFolder[];
   onOpenChange: (open: boolean) => void;
+  onOpenChangeComplete: (open: boolean) => void;
   onPickParent: () => void;
   onRecentOpenChange: (open: boolean) => void;
   onPickRecentFolder: (folderId: string) => void;
@@ -31,6 +32,7 @@ export function BookmarkComposerDialog({
   folderLabel,
   recentFolders,
   onOpenChange,
+  onOpenChangeComplete,
   onPickParent,
   onRecentOpenChange,
   onPickRecentFolder,
@@ -42,7 +44,7 @@ export function BookmarkComposerDialog({
   onSubmit,
 }: BookmarkComposerDialogProps) {
   return (
-    <Dialog open={state.open} onOpenChange={onOpenChange}>
+    <Dialog open={state.open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
       <DialogContent
         aria-describedby={undefined}
         className="flex flex-col p-4"
