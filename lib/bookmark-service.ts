@@ -43,6 +43,7 @@ export interface DeletedBookmarkSnapshot {
 
 export type BookmarkDisplayMode = 'list' | 'tree';
 export type InsertPosition = 'top' | 'bottom';
+export type ListBackBehavior = 'hierarchy' | 'history' | 'close';
 
 export interface InsertSettings {
   folderPosition: InsertPosition;
@@ -52,7 +53,7 @@ export interface InsertSettings {
 export interface ViewSettings {
   listCompact: boolean;
   treeCompact: boolean;
-  listBackNavigation: boolean;
+  listBackBehavior: ListBackBehavior;
 }
 
 type BookmarkSearchInput = string | { query?: string; title?: string; url?: string };
@@ -301,10 +302,11 @@ export async function setInsertSettings(settings: InsertSettings): Promise<void>
 export async function getViewSettings(): Promise<ViewSettings> {
   const stored = await storageGet<Record<string, unknown>>('local', VIEW_SETTINGS_KEY);
   const raw = stored[VIEW_SETTINGS_KEY] as Partial<ViewSettings> | undefined;
+  const listBackBehavior = raw?.listBackBehavior;
   return {
     listCompact: raw?.listCompact === true,
     treeCompact: raw?.treeCompact === true,
-    listBackNavigation: raw?.listBackNavigation !== false,
+    listBackBehavior: listBackBehavior === 'history' || listBackBehavior === 'close' ? listBackBehavior : 'hierarchy',
   };
 }
 

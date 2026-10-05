@@ -102,6 +102,13 @@ export function BookmarkComposerDialog({
             <Input
               autoFocus
               value={state.title}
+              onFocus={(event) => {
+                if (state.mode !== 'create') return;
+
+                const input = event.currentTarget;
+                input.setSelectionRange(0, input.value.length, 'backward');
+                input.scrollLeft = 0;
+              }}
               onChange={(event) => onTitleChange(event.target.value)}
               placeholder="标题"
             />

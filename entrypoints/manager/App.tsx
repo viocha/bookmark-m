@@ -42,15 +42,32 @@ import { flattenTreeNodes, HOME_FOLDER_ID, safeCall, safeCallWithTimeout } from 
 type ManagerHistoryState = {
   managerBase?: boolean;
   managerListSentinel?: boolean;
+  managerListHistory?: boolean;
   folderId?: string;
   trail?: string[];
+  managerUiSentinel?: boolean;
+  uiTrail?: ManagerBackLayer[];
 };
+
+type ManagerBackLayer =
+  | 'search'
+  | 'selection'
+  | 'move'
+  | 'settings'
+  | 'details'
+  | 'bookmark-composer'
+  | 'folder-composer'
+  | 'bookmark-recent';
 
 export default function App() {
   const state = useManagerPageState();
   const listHistoryTrailRef = useRef<string[] | null>(null);
   const ignoreSyntheticListPopRef = useRef(false);
   const pendingListTrailRef = useRef<string[] | null>(null);
+  const pendingListHistoryPushRef = useRef<string | null>(null);
+  const uiHistoryTrailRef = useRef<ManagerBackLayer[] | null>(null);
+  const ignoreSyntheticUiPopRef = useRef(false);
+  const pendingUiTrailRef = useRef<ManagerBackLayer[] | null>(null);
 
   const resetSelection = useCallback(() => {
     state.setSelectionMode(false);
@@ -133,6 +150,77 @@ export default function App() {
     reload: navigation.reload,
   });
 
+  const closeMovePanel = useCallback(() => {
+    if (state.moveState.mode === 'pick-bookmark-parent') {
+      state.setBookmarkComposer((current) => ({ ...current, open: true }));
+    }
+    state.setMoveState((current) => ({ ...current, open: false, mode: 'move', query: '' }));
+  }, [state.moveState.mode, state.setBookmarkComposer, state.setMoveState]);
+
+  const backLayerTrail = useMemo<ManagerBackLayer[]>(() => {
+    const trail: ManagerBackLayer[] = [];
+    if (state.searchOpen) trail.push('search');
+    if (state.selectionMode) trail.push('selection');
+    if (state.moveState.open) trail.push('move');
+    if (state.settingsOpen) trail.push('settings');
+    if (state.detailState.open) trail.push('details');
+    if (state.bookmarkComposer.open) trail.push('bookmark-composer');
+    if (state.folderComposer.open) trail.push('folder-composer');
+    if (state.bookmarkComposer.open && state.bookmarkComposer.recentOpen) trail.push('bookmark-recent');
+    return trail;
+  }, [
+    state.bookmarkComposer.open,
+    state.bookmarkComposer.recentOpen,
+    state.detailState.open,
+    state.folderComposer.open,
+    state.moveState.open,
+    state.searchOpen,
+    state.selectionMode,
+    state.settingsOpen,
+  ]);
+
+  const dismissBackLayers = useCallback((layers: ManagerBackLayer[]) => {
+    for (const layer of layers) {
+      switch (layer) {
+        case 'bookmark-recent':
+          state.setBookmarkComposer((current) => ({ ...current, recentOpen: false }));
+          break;
+        case 'folder-composer':
+          state.setFolderComposer((current) => ({ ...current, open: false }));
+          break;
+        case 'bookmark-composer':
+          editor.closeBookmarkComposer();
+          break;
+        case 'details':
+          state.setDetailState((current) => ({ ...current, open: false }));
+          break;
+        case 'settings':
+          state.setSettingsOpen(false);
+          break;
+        case 'move':
+          closeMovePanel();
+          break;
+        case 'selection':
+          resetSelection();
+          break;
+        case 'search':
+          state.setSearchQuery('');
+          state.setSearchOpen(false);
+          break;
+      }
+    }
+  }, [
+    closeMovePanel,
+    editor,
+    resetSelection,
+    state.setBookmarkComposer,
+    state.setDetailState,
+    state.setFolderComposer,
+    state.setSearchOpen,
+    state.setSearchQuery,
+    state.setSettingsOpen,
+  ]);
+
   const visibleNodes = useMemo(
     () => (state.deferredSearch ? state.searchResults : state.currentChildren),
     [state.currentChildren, state.deferredSearch, state.searchResults],
@@ -165,6 +253,52 @@ export default function App() {
       );
     }
   }, []);
+
+  const pushUiHistoryTrail = useCallback((trail: ManagerBackLayer[], startIndex = 0) => {
+    for (let index = startIndex; index < trail.length; index += 1) {
+      const nextTrail = trail.slice(0, index + 1);
+      window.history.pushState(
+        {
+          ...(window.history.state as ManagerHistoryState | null),
+          managerUiSentinel: true,
+          uiTrail: nextTrail,
+        } satisfies ManagerHistoryState,
+        '',
+      );
+    }
+  }, []);
+
+  const pushVisitedFolderHistory = useCallback((folderId: string) => {
+    window.history.pushState(
+      { managerListHistory: true, folderId } satisfies ManagerHistoryState,
+      '',
+    );
+  }, []);
+
+  const navigateToFolder = useCallback((
+    folderId: string,
+    options?: Parameters<typeof navigation.goToFolder>[1],
+  ) => {
+    if (
+      state.viewSettingsState.listBackBehavior === 'history'
+      && state.displayMode === 'list'
+      && folderId !== state.currentFolderIdRef.current
+    ) {
+      if ((uiHistoryTrailRef.current?.length ?? 0) > 0 || ignoreSyntheticUiPopRef.current) {
+        pendingListHistoryPushRef.current = folderId;
+      } else {
+        pushVisitedFolderHistory(folderId);
+      }
+    }
+
+    return navigation.goToFolder(folderId, options);
+  }, [
+    navigation,
+    pushVisitedFolderHistory,
+    state.currentFolderIdRef,
+    state.displayMode,
+    state.viewSettingsState.listBackBehavior,
+  ]);
 
   const openNodeUrls = useCallback(async (ids: string[]) => {
     const urls = Array.from(new Set((await Promise.all(ids.map(async (id) => {
@@ -322,7 +456,7 @@ export default function App() {
         }
         closeMenu();
         if (targetNode.parentId) {
-          void navigation.goToFolder(targetNode.parentId, { clearSearchTiming: 'after' }).then(() => {
+          void navigateToFolder(targetNode.parentId, { clearSearchTiming: 'after' }).then(() => {
             state.setHighlightedNodeId(targetNode.id);
           });
         }
@@ -368,6 +502,7 @@ export default function App() {
     askDelete,
     editor,
     move,
+    navigateToFolder,
     navigation,
     openNodeUrls,
     revealNodeInTree,
@@ -396,7 +531,7 @@ export default function App() {
       safeCallWithTimeout<ViewSettings>(() => getViewSettings(), {
         listCompact: false,
         treeCompact: false,
-        listBackNavigation: true,
+        listBackBehavior: 'hierarchy',
       }),
       getRecentFolders(),
     ]).then(([positions, mode, treeExpandedIds, settings, viewSettings, recentFolders]) => {
@@ -440,10 +575,86 @@ export default function App() {
   }, [state.expandedTreeIds.length, state.persistExpandedTreeIds, state.roots, state.setExpandedTreeIds]);
 
   useEffect(() => {
+    const desiredTrail = backLayerTrail;
+    const historyTrail = uiHistoryTrailRef.current;
+
+    if (historyTrail === null) {
+      uiHistoryTrailRef.current = desiredTrail;
+      if (desiredTrail.length > 0) pushUiHistoryTrail(desiredTrail);
+      return;
+    }
+
+    if (
+      historyTrail.length === desiredTrail.length
+      && historyTrail.every((layer, index) => layer === desiredTrail[index])
+    ) {
+      return;
+    }
+
+    let commonLength = 0;
+    while (
+      commonLength < historyTrail.length
+      && commonLength < desiredTrail.length
+      && historyTrail[commonLength] === desiredTrail[commonLength]
+    ) {
+      commonLength += 1;
+    }
+
+    if (commonLength === historyTrail.length && desiredTrail.length > historyTrail.length) {
+      pushUiHistoryTrail(desiredTrail, historyTrail.length);
+      uiHistoryTrailRef.current = desiredTrail;
+      return;
+    }
+
+    ignoreSyntheticUiPopRef.current = true;
+    pendingUiTrailRef.current = desiredTrail;
+    uiHistoryTrailRef.current = desiredTrail;
+    window.history.go(commonLength - historyTrail.length);
+  }, [backLayerTrail, pushUiHistoryTrail]);
+
+  useEffect(() => {
+    if (state.viewSettingsState.listBackBehavior !== 'hierarchy') {
+      listHistoryTrailRef.current = null;
+      pendingListTrailRef.current = null;
+    }
+    if (state.viewSettingsState.listBackBehavior !== 'history') {
+      pendingListHistoryPushRef.current = null;
+    }
+  }, [state.viewSettingsState.listBackBehavior]);
+
+  useEffect(() => {
+    if (
+      state.loading
+      || state.displayMode !== 'list'
+      || state.viewSettingsState.listBackBehavior !== 'history'
+      || backLayerTrail.length > 0
+      || ignoreSyntheticUiPopRef.current
+      || pendingListHistoryPushRef.current
+    ) {
+      return;
+    }
+
+    const historyState = window.history.state as ManagerHistoryState | null;
+    if (historyState?.managerListHistory && historyState.folderId === state.currentFolderId) return;
+
+    window.history.replaceState(
+      { managerListHistory: true, folderId: state.currentFolderId } satisfies ManagerHistoryState,
+      '',
+    );
+  }, [
+    backLayerTrail.length,
+    state.currentFolderId,
+    state.displayMode,
+    state.loading,
+    state.viewSettingsState.listBackBehavior,
+  ]);
+
+  useEffect(() => {
     const listNavigationActive =
-      state.viewSettingsState.listBackNavigation && state.displayMode === 'list' && !state.deferredSearch;
+      state.viewSettingsState.listBackBehavior === 'hierarchy' && state.displayMode === 'list' && !state.deferredSearch;
     if (!listNavigationActive) return;
     if (state.loading) return;
+    if (backLayerTrail.length > 0 || ignoreSyntheticUiPopRef.current) return;
 
     const desiredTrail = state.currentFolderId === HOME_FOLDER_ID ? [] : state.breadcrumbs.map((node) => node.id);
     const historyTrail = listHistoryTrailRef.current;
@@ -487,12 +698,51 @@ export default function App() {
     state.deferredSearch,
     state.displayMode,
     state.loading,
-    state.viewSettingsState.listBackNavigation,
+    state.viewSettingsState.listBackBehavior,
+    backLayerTrail.length,
     pushListHistoryTrail,
   ]);
 
   useEffect(() => {
     const handlePopState = () => {
+      if (ignoreSyntheticUiPopRef.current) {
+        ignoreSyntheticUiPopRef.current = false;
+
+        const pendingTrail = pendingUiTrailRef.current;
+        pendingUiTrailRef.current = null;
+
+        if (pendingTrail) {
+          const historyState = window.history.state as ManagerHistoryState | null;
+          const settledTrail = historyState?.managerUiSentinel ? historyState.uiTrail ?? [] : [];
+          pushUiHistoryTrail(pendingTrail, settledTrail.length);
+        }
+
+        const pendingFolderId = pendingListHistoryPushRef.current;
+        if (pendingFolderId) {
+          pendingListHistoryPushRef.current = null;
+          pushVisitedFolderHistory(pendingFolderId);
+        } else if (
+          state.viewSettingsState.listBackBehavior === 'history'
+          && state.displayMode === 'list'
+        ) {
+          window.history.replaceState(
+            { managerListHistory: true, folderId: state.currentFolderId } satisfies ManagerHistoryState,
+            '',
+          );
+        } else if (
+          state.viewSettingsState.listBackBehavior === 'hierarchy'
+          && state.displayMode === 'list'
+          && !state.deferredSearch
+          && listHistoryTrailRef.current === null
+        ) {
+          const desiredTrail = state.currentFolderId === HOME_FOLDER_ID ? [] : state.breadcrumbs.map((node) => node.id);
+          window.history.replaceState({ managerBase: true, trail: [] } satisfies ManagerHistoryState, '');
+          pushListHistoryTrail(desiredTrail);
+          listHistoryTrailRef.current = desiredTrail;
+        }
+        return;
+      }
+
       if (ignoreSyntheticListPopRef.current) {
         ignoreSyntheticListPopRef.current = false;
 
@@ -509,15 +759,47 @@ export default function App() {
         return;
       }
 
+      const historyState = window.history.state as ManagerHistoryState | null;
+      const targetUiTrail = historyState?.managerUiSentinel ? historyState.uiTrail ?? [] : [];
+      const currentUiTrail = uiHistoryTrailRef.current ?? [];
+      const targetIsPrefix = targetUiTrail.length <= currentUiTrail.length
+        && targetUiTrail.every((layer, index) => currentUiTrail[index] === layer);
+
+      if (targetIsPrefix && targetUiTrail.length < currentUiTrail.length) {
+        uiHistoryTrailRef.current = targetUiTrail;
+        dismissBackLayers(currentUiTrail.slice(targetUiTrail.length).reverse());
+        return;
+      }
+
       if (
-        !state.viewSettingsState.listBackNavigation
-        || state.displayMode !== 'list'
+        state.displayMode !== 'list'
         || state.deferredSearch
       ) {
         return;
       }
 
-      const historyState = window.history.state as ManagerHistoryState | null;
+      if (state.viewSettingsState.listBackBehavior === 'history') {
+        if (historyState?.managerListHistory && historyState.folderId && historyState.folderId !== state.currentFolderId) {
+          void navigation.goToFolder(historyState.folderId);
+          return;
+        }
+        if (historyState?.managerListSentinel || historyState?.managerBase) {
+          window.history.back();
+        }
+        return;
+      }
+
+      if (state.viewSettingsState.listBackBehavior === 'close') {
+        if (historyState?.managerListHistory || historyState?.managerListSentinel || historyState?.managerBase) {
+          window.history.back();
+        }
+        return;
+      }
+
+      if (historyState?.managerListHistory) {
+        window.history.back();
+        return;
+      }
 
       if (historyState?.managerListSentinel && historyState.folderId && historyState.folderId !== state.currentFolderId) {
         listHistoryTrailRef.current = historyState.trail ?? [historyState.folderId];
@@ -537,11 +819,15 @@ export default function App() {
     };
   }, [
     navigation,
+    state.breadcrumbs,
     state.currentFolderId,
     state.deferredSearch,
     state.displayMode,
-    state.viewSettingsState.listBackNavigation,
+    state.viewSettingsState.listBackBehavior,
+    dismissBackLayers,
     pushListHistoryTrail,
+    pushUiHistoryTrail,
+    pushVisitedFolderHistory,
   ]);
 
   useEffect(() => {
@@ -760,10 +1046,10 @@ export default function App() {
         isHomeView={navigation.isHomeView}
         breadcrumbs={state.breadcrumbs}
         onGoHome={() => {
-          void navigation.goHome();
+          void navigateToFolder(HOME_FOLDER_ID);
         }}
         onGoToFolder={(id) => {
-          void navigation.goToFolder(id);
+          void navigateToFolder(id);
         }}
         errorMessage={state.errorMessage}
         searching={state.searching}
@@ -787,7 +1073,12 @@ export default function App() {
               return;
             }
 
-            void navigation.goToFolder(node.id, { clearSearchTiming: 'after' });
+            void navigateToFolder(node.id, { clearSearchTiming: 'after' });
+            return;
+          }
+
+          if (!node.url) {
+            void navigateToFolder(node.id);
             return;
           }
 
@@ -837,7 +1128,7 @@ export default function App() {
         onBookmarkComposerUrlChange={(url) => state.setBookmarkComposer((current) => ({ ...current, url }))}
         onBookmarkComposerPositionChange={(position) => state.setBookmarkComposer((current) => ({ ...current, position }))}
         onBookmarkComposerRevealLocation={() => {
-          editor.closeBookmarkComposer(() => navigation.goToFolder(state.bookmarkComposer.parentId));
+          editor.closeBookmarkComposer(() => navigateToFolder(state.bookmarkComposer.parentId));
         }}
         onBookmarkComposerDelete={() => {
           editor.closeBookmarkComposer(() => askDelete([state.bookmarkComposer.targetId!]));
@@ -862,12 +1153,7 @@ export default function App() {
         moveState={state.moveState}
         filteredFolderTree={move.filteredFolderTree}
         moveTreeExpandedIds={move.moveTreeExpandedIds}
-        onMoveClose={() => {
-          if (state.moveState.mode === 'pick-bookmark-parent') {
-            state.setBookmarkComposer((current) => ({ ...current, open: true }));
-          }
-          state.setMoveState((current) => ({ ...current, open: false, mode: 'move', query: '' }));
-        }}
+        onMoveClose={closeMovePanel}
         onSubmitMove={() => void move.submitMove()}
         onMoveQueryChange={(query) => state.setMoveState((current) => ({ ...current, query }))}
         onToggleMoveExpanded={move.toggleMoveFolderExpanded}

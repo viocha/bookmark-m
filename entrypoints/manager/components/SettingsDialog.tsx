@@ -33,7 +33,7 @@ function SettingChoice({ label, value, choices, onChange }: ChoiceProps) {
         }}
         variant="outline"
         spacing={2}
-        className="grid w-full grid-cols-2"
+        className="grid w-full grid-flow-col auto-cols-fr"
         aria-label={label}
       >
         {choices.map((choice) => (
@@ -46,9 +46,10 @@ function SettingChoice({ label, value, choices, onChange }: ChoiceProps) {
   );
 }
 
-const booleanChoices = [
-  { value: 'true', label: '逐层返回' },
-  { value: 'false', label: '关闭' },
+const backBehaviorChoices = [
+  { value: 'hierarchy', label: '逐层返回' },
+  { value: 'history', label: '浏览历史' },
+  { value: 'close', label: '关闭页面' },
 ];
 const densityChoices = [
   { value: 'false', label: '正常' },
@@ -68,8 +69,8 @@ export function SettingsDialog({
         <DialogHeader><DialogTitle>全局设置</DialogTitle></DialogHeader>
         <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-4 p-1">
-            <SettingChoice label="列表模式返回键" value={String(viewSettings.listBackNavigation)} choices={booleanChoices}
-              onChange={(value) => onViewChange({ ...viewSettings, listBackNavigation: value === 'true' })} />
+            <SettingChoice label="列表模式返回键" value={viewSettings.listBackBehavior} choices={backBehaviorChoices}
+              onChange={(value) => onViewChange({ ...viewSettings, listBackBehavior: value as ViewSettings['listBackBehavior'] })} />
             <SettingChoice label="列表模式密度" value={String(viewSettings.listCompact)} choices={densityChoices}
               onChange={(value) => onViewChange({ ...viewSettings, listCompact: value === 'true' })} />
             <SettingChoice label="树形模式密度" value={String(viewSettings.treeCompact)} choices={densityChoices}

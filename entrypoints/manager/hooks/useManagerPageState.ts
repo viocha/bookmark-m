@@ -55,7 +55,7 @@ export function useManagerPageState() {
   const [viewSettingsState, setViewSettingsState] = useState<ViewSettings>({
     listCompact: false,
     treeCompact: false,
-    listBackNavigation: true,
+    listBackBehavior: 'hierarchy',
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [normalizing, setNormalizing] = useState(false);
