@@ -100,7 +100,7 @@ export function BookmarkComposerDialog({
               </DropdownMenu>
             </div>
             <Input
-              autoFocus
+              autoFocus={state.mode === 'create'}
               value={state.title}
               onFocus={(event) => {
                 if (state.mode !== 'create') return;
