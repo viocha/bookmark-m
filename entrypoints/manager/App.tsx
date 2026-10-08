@@ -66,6 +66,7 @@ export default function App() {
   const pendingListTrailRef = useRef<string[] | null>(null);
   const pendingListHistoryPushRef = useRef<string | null>(null);
   const uiHistoryTrailRef = useRef<ManagerBackLayer[] | null>(null);
+  const searchResultsQueryRef = useRef('');
   const ignoreSyntheticUiPopRef = useRef(false);
   const pendingUiTrailRef = useRef<ManagerBackLayer[] | null>(null);
 
@@ -836,6 +837,7 @@ export default function App() {
   ]);
 
   useEffect(() => {
+    if (state.loading) return;
     const viewport = navigation.getScrollViewport();
     if (!viewport) return;
 
@@ -854,21 +856,25 @@ export default function App() {
     navigation.persistScrollPositions,
     state.currentFolderId,
     state.displayMode,
+    state.loading,
     state.scrollPositionsRef,
   ]);
 
   useEffect(() => {
-    window.requestAnimationFrame(() => {
+    if (state.loading) return;
+    const frame = window.requestAnimationFrame(() => {
       navigation.getScrollViewport()?.scrollTo({
         top: state.scrollPositionsRef.current[navigation.getScrollKey()] ?? 0,
       });
     });
+    return () => window.cancelAnimationFrame(frame);
   }, [
     navigation.getScrollKey,
     navigation.getScrollViewport,
     state.currentFolderId,
     state.deferredSearch,
     state.displayMode,
+    state.loading,
     state.scrollPositionsRef,
   ]);
 
@@ -956,6 +962,7 @@ export default function App() {
     let cancelled = false;
 
     if (!state.deferredSearch) {
+      searchResultsQueryRef.current = '';
       state.setSearchResults([]);
       state.setSearchPaths({});
       state.setSearching(false);
@@ -963,8 +970,12 @@ export default function App() {
     }
 
     state.setSearching(true);
-    state.setSearchResults([]);
-    state.setSearchPaths({});
+    // 刷新同一搜索时保留结果，避免列表清空导致浏览器把滚动位置压回顶部。
+    if (searchResultsQueryRef.current !== state.deferredSearch) {
+      state.setSearchResults([]);
+      state.setSearchPaths({});
+      searchResultsQueryRef.current = state.deferredSearch;
+    }
     void searchNodes(state.deferredSearch)
       .then((results) => {
         const sorted = sortFoldersFirst(results);

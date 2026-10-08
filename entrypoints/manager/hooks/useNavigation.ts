@@ -112,6 +112,7 @@ export function useNavigation({
   const reload = useCallback(async (preferredFolderId?: string) => {
     const requestId = ++reloadRequestRef.current;
     const shouldShowLoading = reloadRequestRef.current === 1;
+    const previousFolderId = currentFolderIdRef.current;
     if (shouldShowLoading) {
       setLoading(true);
     }
@@ -123,6 +124,7 @@ export function useNavigation({
       const requestedId =
         preferredFolderId ?? (currentFolderIdRef.current === HOME_FOLDER_ID ? rememberedId : currentFolderIdRef.current) ?? rememberedId;
       const nextFolderChildCounts = collectFolderChildCounts(treeRoots);
+      let loadedFolderId = requestedId;
 
       if (requestedId === HOME_FOLDER_ID) {
         const context = await safeCallWithTimeout(() => getLaunchContext(), null);
@@ -142,6 +144,7 @@ export function useNavigation({
         const validatedId = await safeCallWithTimeout(() => ensureFolderId(requestedId), rootFallbackId);
         const nextFolderId =
           validatedId === '1' && !treeRoots.some((node) => node.id === '1') ? rootFallbackId : validatedId;
+        loadedFolderId = nextFolderId;
 
         const [folderNode, folderPathNodes, folderChildren, context] = await Promise.all([
           safeCallWithTimeout(() => getNode(nextFolderId), null),
@@ -166,10 +169,13 @@ export function useNavigation({
       const folders = await safeCallWithTimeout(() => collectFolderTree(), []);
       if (requestId !== reloadRequestRef.current) return;
       setFolderTree(folders);
-      const nextScrollKey = displayMode === 'tree' ? TREE_SCROLL_KEY : requestedId === HOME_FOLDER_ID ? HOME_FOLDER_ID : requestedId;
-      window.requestAnimationFrame(() => {
-        getScrollViewport()?.scrollTo({ top: scrollPositionsRef.current[nextScrollKey] ?? 0 });
-      });
+      // 同目录的数据刷新保留视口位置，仅在目录切换时恢复保存的位置。
+      if (displayMode === 'list' && loadedFolderId !== previousFolderId) {
+        window.requestAnimationFrame(() => {
+          if (requestId !== reloadRequestRef.current) return;
+          getScrollViewport()?.scrollTo({ top: scrollPositionsRef.current[loadedFolderId] ?? 0 });
+        });
+      }
     } catch (error) {
       if (requestId !== reloadRequestRef.current) return;
       setErrorMessage(error instanceof Error ? error.message : '书签加载失败');
