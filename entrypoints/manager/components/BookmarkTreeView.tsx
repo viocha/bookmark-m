@@ -12,7 +12,7 @@ type BookmarkTreeViewProps = {
   selectedIds: string[];
   selectionMode: boolean;
   compact: boolean;
-  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => React.ReactNode;
+  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   onToggleFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onToggleSelect: (id: string) => void;
@@ -26,7 +26,7 @@ type SortableTreeRowProps = {
   selectedIds: string[];
   selectionMode: boolean;
   compact: boolean;
-  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => React.ReactNode;
+  renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   onToggleFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onToggleSelect: (id: string) => void;

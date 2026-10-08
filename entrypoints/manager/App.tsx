@@ -438,7 +438,7 @@ export default function App() {
     return ids;
   }, []);
 
-  const getItemMenuContent = useCallback((node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => (
+  const getItemMenuContent = useCallback((node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: (afterClose?: () => void) => void) => (
     <ItemMenuContent
       node={node}
       deferredSearch={Boolean(state.deferredSearch)}
@@ -494,6 +494,11 @@ export default function App() {
       }}
       onRenameFolder={(targetNode, parentId) => editor.openFolderComposer('edit', parentId, targetNode)}
       onMove={(id) => move.openMoveDialog([id])}
+      onMoveToTop={(targetNode) => {
+        if (!targetNode.parentId) return;
+        void reorderNodeWithinFolder(targetNode.id, targetNode.parentId, 0)
+          .catch(() => toast('移动失败，请重试'));
+      }}
       onDelete={(id) => {
         void askDelete([id]);
       }}

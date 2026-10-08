@@ -34,7 +34,7 @@ type SortableListRowProps = {
   selectionMode: boolean;
   searchPath?: string;
   compact: boolean;
-  menuContent: (closeMenu: () => void) => React.ReactNode;
+  menuContent: (closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   highlighted: boolean;
   onClick: () => void;
   dragEnabled: boolean;
@@ -179,7 +179,7 @@ type ManagerContentProps = {
   treeCompact: boolean;
   expandedTreeIds: string[];
   highlightedNodeId?: string | null;
-  getItemMenuContent: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: () => void) => React.ReactNode;
+  getItemMenuContent: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   onToggleTreeFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onToggleSelect: (id: string) => void;

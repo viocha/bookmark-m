@@ -1,4 +1,4 @@
-import { Bookmark, ChevronRight, Copy, FilePenLine, FolderPlus, Info, Move, Pencil, Play, SquareMinus, SquarePlus, Star, Trash2 } from 'lucide-react';
+import { ArrowUpToLine, Bookmark, ChevronRight, Copy, FilePenLine, FolderPlus, Info, Move, Pencil, Play, SquareMinus, SquarePlus, Star, Trash2 } from 'lucide-react';
 
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { isProtectedNode } from '@/lib/bookmark-service';
@@ -11,7 +11,7 @@ type ItemMenuContentProps = {
   compact: boolean;
   hasLaunchContext: boolean;
   hasLaunchBookmark: boolean;
-  onClose: () => void;
+  onClose: (afterClose?: () => void) => void;
   onShowLocation: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onCopyUrl: (url: string) => void;
   onOpenDetails: (node: chrome.bookmarks.BookmarkTreeNode) => void;
@@ -24,6 +24,7 @@ type ItemMenuContentProps = {
   onCollapseFolderRecursively: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onRenameFolder: (node: chrome.bookmarks.BookmarkTreeNode, parentId: string) => void;
   onMove: (id: string) => void;
+  onMoveToTop: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onDelete: (id: string) => void;
 };
 
@@ -48,6 +49,7 @@ export function ItemMenuContent({
   onCollapseFolderRecursively,
   onRenameFolder,
   onMove,
+  onMoveToTop,
   onDelete,
 }: ItemMenuContentProps) {
   const protectedNode = isProtectedNode(node.id);
@@ -105,6 +107,16 @@ export function ItemMenuContent({
         >
           <Move className={menuIconClass} />
           移动
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            onClose(() => onMoveToTop(node));
+          }}
+          disabled={!node.parentId}
+          className={menuButtonClass}
+        >
+          <ArrowUpToLine className={menuIconClass} />
+          移动到顶部
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onDelete(node.id)} variant="destructive" className={menuButtonClass}>
           <Trash2 className={menuIconClass} />

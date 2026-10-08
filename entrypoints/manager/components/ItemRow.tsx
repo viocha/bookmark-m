@@ -20,7 +20,7 @@ type ItemRowProps = {
   compactTree?: boolean;
   longPressMenu?: boolean;
   expanded?: boolean;
-  menuContent?: (closeMenu: () => void) => React.ReactNode;
+  menuContent?: (closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   highlighted?: boolean;
   onClick: () => void;
   onToggleExpand?: () => void;
@@ -55,7 +55,9 @@ export function ItemRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const closeMenu = useCallback(() => {
+  const afterMenuCloseRef = useRef<(() => void) | undefined>(undefined);
+  const closeMenu = useCallback((afterClose?: () => void) => {
+    if (afterClose) afterMenuCloseRef.current = afterClose;
     setMenuOpen(false);
   }, []);
   useImmediateMenuDismiss({ open: menuOpen, onClose: closeMenu, triggerRef, contentRef });
@@ -188,6 +190,12 @@ export function ItemRow({
             open={menuOpen}
             onOpenChange={(nextOpen) => {
               setMenuOpen(nextOpen);
+            }}
+            onOpenChangeComplete={(open) => {
+              if (open) return;
+              const afterClose = afterMenuCloseRef.current;
+              afterMenuCloseRef.current = undefined;
+              afterClose?.();
             }}
           >
             <DropdownMenuTrigger render={<button
