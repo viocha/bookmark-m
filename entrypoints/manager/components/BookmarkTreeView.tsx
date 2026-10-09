@@ -2,6 +2,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 
 import { sortFoldersFirst } from '@/lib/bookmark-service';
+import { cn } from '@/lib/utils';
 
 import { ItemRow } from './ItemRow';
 
@@ -12,6 +13,8 @@ type BookmarkTreeViewProps = {
   selectedIds: string[];
   selectionMode: boolean;
   compact: boolean;
+  bookmarkTitleLines: number;
+  compactShowUrl: boolean;
   renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   onToggleFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
@@ -26,6 +29,8 @@ type SortableTreeRowProps = {
   selectedIds: string[];
   selectionMode: boolean;
   compact: boolean;
+  bookmarkTitleLines: number;
+  compactShowUrl: boolean;
   renderItemMenu: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   onToggleFolder: (folderId: string) => void;
   onOpenNode: (node: chrome.bookmarks.BookmarkTreeNode) => void;
@@ -41,6 +46,8 @@ function SortableTreeRow({
   selectedIds,
   selectionMode,
   compact,
+  bookmarkTitleLines,
+  compactShowUrl,
   renderItemMenu,
   onToggleFolder,
   onOpenNode,
@@ -63,6 +70,8 @@ function SortableTreeRow({
       selected={selectedIds.includes(node.id)}
       selectionMode={selectionMode}
       compact={compact}
+      bookmarkTitleLines={bookmarkTitleLines}
+      compactShowUrl={compactShowUrl}
       treeRow
       compactTree={compact}
       longPressMenu={false}
@@ -103,6 +112,8 @@ export function BookmarkTreeView({
   selectedIds,
   selectionMode,
   compact,
+  bookmarkTitleLines,
+  compactShowUrl,
   renderItemMenu,
   onToggleFolder,
   onOpenNode,
@@ -112,6 +123,7 @@ export function BookmarkTreeView({
 }: BookmarkTreeViewProps) {
   const renderNodes = (treeNodes: chrome.bookmarks.BookmarkTreeNode[], depth = 0): React.ReactNode =>
     (
+      <div className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-1')}>
       <SortableContext items={sortFoldersFirst(treeNodes).map((node) => node.id)} strategy={verticalListSortingStrategy}>
         {sortFoldersFirst(treeNodes).map((node) => {
       const folder = !node.url;
@@ -119,7 +131,7 @@ export function BookmarkTreeView({
       const children = folder ? sortFoldersFirst(node.children ?? []) : [];
 
       return (
-        <div key={node.id} data-tree-node-id={node.id}>
+        <div key={node.id} data-tree-node-id={node.id} className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-1')}>
           <div style={{ paddingLeft: `${depth * 10}px` }}>
             <SortableTreeRow
               node={node}
@@ -127,6 +139,8 @@ export function BookmarkTreeView({
               selectedIds={selectedIds}
               selectionMode={selectionMode}
               compact={compact}
+              bookmarkTitleLines={bookmarkTitleLines}
+              compactShowUrl={compactShowUrl}
               expanded={expanded}
               renderItemMenu={renderItemMenu}
               onToggleFolder={onToggleFolder}
@@ -141,6 +155,7 @@ export function BookmarkTreeView({
       );
     })}
       </SortableContext>
+      </div>
     );
 
   return <>{renderNodes(nodes)}</>;

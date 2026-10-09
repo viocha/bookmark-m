@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, Folder, FolderPlus, MoreHorizontal, Pencil, 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { isProtectedNode, type FolderTreeNode } from '@/lib/bookmark-service';
 import { cn } from '@/lib/utils';
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
@@ -43,70 +44,65 @@ export function MoveFolderTree({
   }, []);
 
   const renderNodes = (treeNodes: FolderTreeNode[]): React.ReactNode =>
-    treeNodes.map((folder) => {
+    <div className="flex flex-col gap-1">{treeNodes.map((folder) => {
       const expanded = expandedIds.includes(folder.id);
       const selectable = !movingIds.includes(folder.id);
       return (
-        <div key={folder.id}>
-          <div className="relative">
-            <button
-              ref={targetFolderId === folder.id ? selectedFolderRef : undefined}
-              type="button"
-              className={cn(
-                'flex w-full touch-manipulation items-center gap-0.5 rounded-lg px-1 py-0.5 pr-10 text-left',
-                targetFolderId === folder.id && 'bg-accent',
-              )}
-              disabled={!selectable}
-              onClick={() => onSelectTarget(folder)}
-              style={{ paddingLeft: `${6 + folder.depth * 12}px` }}
-            >
+        <div key={folder.id} className="flex flex-col gap-1">
+          <div
+            className={cn(
+              'relative flex min-h-7 items-center gap-0.5 rounded-lg pr-9 transition-colors',
+              targetFolderId === folder.id
+                ? 'bg-accent'
+                : selectable && 'hover:bg-muted/40',
+            )}
+            style={{ paddingLeft: `${6 + folder.depth * 12}px` }}
+          >
               {folder.children.length > 0 ? (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onToggleExpanded(folder.id);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onToggleExpanded(folder.id);
-                    }
-                  }}
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-5 hover:bg-transparent aria-expanded:bg-transparent"
+                  aria-label={expanded ? '折叠文件夹' : '展开文件夹'}
+                  aria-expanded={expanded}
+                  disabled={!selectable}
+                  onClick={() => onToggleExpanded(folder.id)}
                 >
                   {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-                </span>
+                </Button>
               ) : (
                 <span className="size-5 shrink-0" />
               )}
-              <div
-                className={cn(
-                  'flex min-w-0 flex-1 items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm',
-                  selectable ? 'text-foreground' : 'cursor-not-allowed text-muted-foreground',
-                )}
+              <Button
+                ref={targetFolderId === folder.id ? selectedFolderRef : undefined}
+                variant="ghost"
+                size="sm"
+                disabled={!selectable}
+                aria-pressed={targetFolderId === folder.id}
+                onClick={() => onSelectTarget(folder)}
+                className="min-w-0 flex-1 justify-start gap-1.5 px-1.5 py-0 text-left hover:bg-transparent"
               >
-                <Folder className="size-3.5 shrink-0 text-primary" />
+                <Folder data-icon="inline-start" />
                 <span className="min-w-0 flex-1 truncate">{folder.title}</span>
                 {folder.childCount > 0 ? (
                   <span className="shrink-0 px-0.5 text-[11px] text-muted-foreground">
                     {folder.childCount}
                   </span>
                 ) : null}
-              </div>
-            </button>
+              </Button>
             <div className="absolute right-1 top-1/2 -translate-y-1/2" data-move-item-menu>
               <DropdownMenu
                 open={openMenuId === folder.id}
                 onOpenChange={(open) => setOpenMenuId(open ? folder.id : null)}
               >
-                <DropdownMenuTrigger render={<button
+                <DropdownMenuTrigger render={<Button
                     ref={openMenuId === folder.id ? triggerRef : undefined}
                     type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label="打开文件夹菜单"
                     className={cn(
-                      'flex size-7 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]',
+                      'touch-manipulation rounded-full active:scale-[0.96]',
                       openMenuId === folder.id && 'bg-muted text-foreground',
                     )}
                   />}>
@@ -161,7 +157,7 @@ export function MoveFolderTree({
           {expanded && folder.children.length > 0 ? renderNodes(folder.children) : null}
         </div>
       );
-    });
+    })}</div>;
 
   return <>{renderNodes(nodes)}</>;
 }

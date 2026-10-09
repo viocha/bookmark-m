@@ -21,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { getDisplayTitle, sortFoldersFirst } from '@/lib/bookmark-service';
+import { getDisplayTitle, sortFoldersFirst, type ViewSettings } from '@/lib/bookmark-service';
 
 import { BookmarkTreeView } from './BookmarkTreeView';
 import { ItemRow } from './ItemRow';
@@ -34,6 +34,8 @@ type SortableListRowProps = {
   selectionMode: boolean;
   searchPath?: string;
   compact: boolean;
+  bookmarkTitleLines: number;
+  compactShowUrl: boolean;
   menuContent: (closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
   highlighted: boolean;
   onClick: () => void;
@@ -47,6 +49,8 @@ function SortableListRow({
   selectionMode,
   searchPath,
   compact,
+  bookmarkTitleLines,
+  compactShowUrl,
   menuContent,
   highlighted,
   onClick,
@@ -65,6 +69,8 @@ function SortableListRow({
       selectionMode={selectionMode}
       searchPath={searchPath}
       compact={compact}
+      bookmarkTitleLines={bookmarkTitleLines}
+      compactShowUrl={compactShowUrl}
       treeRow={false}
       compactTree={false}
       longPressMenu={false}
@@ -177,6 +183,7 @@ type ManagerContentProps = {
   searchPaths: Record<string, string>;
   listCompact: boolean;
   treeCompact: boolean;
+  viewSettings: ViewSettings;
   expandedTreeIds: string[];
   highlightedNodeId?: string | null;
   getItemMenuContent: (node: chrome.bookmarks.BookmarkTreeNode, compact: boolean, closeMenu: (afterClose?: () => void) => void) => React.ReactNode;
@@ -205,6 +212,7 @@ export function ManagerContent({
   searchPaths,
   listCompact,
   treeCompact,
+  viewSettings,
   expandedTreeIds,
   highlightedNodeId,
   getItemMenuContent,
@@ -217,6 +225,10 @@ export function ManagerContent({
   const searchActive = Boolean(deferredSearch);
   const currentCompact = searchActive ? false : isTreeMode ? treeCompact : listCompact;
   const listRowCompact = searchActive ? false : listCompact;
+  const bookmarkTitleLines = isTreeMode
+    ? (treeCompact ? viewSettings.treeCompactTitleLines : viewSettings.treeTitleLines)
+    : (listRowCompact ? viewSettings.listCompactTitleLines : viewSettings.listTitleLines);
+  const compactShowUrl = isTreeMode ? viewSettings.treeCompactShowUrl : viewSettings.listCompactShowUrl;
   const canDragReorder = displayMode === 'list' && !deferredSearch && !selectionMode;
   const canDragTreeReorder = isTreeMode && !selectionMode;
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
@@ -233,8 +245,9 @@ export function ManagerContent({
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 220,
-        tolerance: 14,
+        // 静止长按才进入排序，手指开始滑动时优先滚动列表。
+        delay: 600,
+        tolerance: 3,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -376,6 +389,8 @@ export function ManagerContent({
                     selectedIds={selectedIds}
                     selectionMode={selectionMode}
                     compact={treeCompact}
+                    bookmarkTitleLines={bookmarkTitleLines}
+                    compactShowUrl={compactShowUrl}
                     renderItemMenu={getItemMenuContent}
                     onToggleFolder={onToggleTreeFolder}
                     onOpenNode={onOpenNode}
@@ -395,6 +410,8 @@ export function ManagerContent({
                           selectionMode={selectionMode}
                           searchPath={deferredSearch ? searchPaths[node.id] : undefined}
                           compact={listRowCompact}
+                          bookmarkTitleLines={bookmarkTitleLines}
+                          compactShowUrl={compactShowUrl}
                           menuContent={(closeMenu) => getItemMenuContent(node, listRowCompact, closeMenu)}
                           highlighted={highlightedNodeId === node.id}
                           onClick={() => {
@@ -424,6 +441,8 @@ export function ManagerContent({
                         selectionMode={selectionMode}
                         searchPath={deferredSearch ? searchPaths[activeDragNode.id] : undefined}
                         compact={isTreeMode ? treeCompact : listRowCompact}
+                        bookmarkTitleLines={bookmarkTitleLines}
+                        compactShowUrl={compactShowUrl}
                         treeRow={isTreeMode}
                         compactTree={isTreeMode && treeCompact}
                         longPressMenu={false}

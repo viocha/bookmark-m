@@ -2,6 +2,7 @@ import { RefreshCw, Search, X } from 'lucide-react';
 import type { RefObject } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 
 type ManagerHeaderProps = {
   pageTitle: string;
@@ -35,23 +36,28 @@ export function ManagerHeader({
       <div className="px-3 py-2">
         <div className="flex items-center gap-2">
           {searchOpen || deferredSearch ? (
-            <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-border bg-card px-2">
-              <Search className="size-4 shrink-0 text-muted-foreground" />
-              <input
+            <InputGroup className="min-w-0 flex-1 rounded-full">
+              <InputGroupAddon><Search /></InputGroupAddon>
+              <InputGroupInput
                 ref={searchInputRef}
                 value={searchQuery}
                 onChange={(event) => onSearchChange(event.target.value)}
                 placeholder="搜索书签"
-                className="h-7 min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm leading-none outline-none"
+                aria-label="搜索书签"
               />
-              <button
+              <InputGroupAddon align="inline-end" className="pr-1.5 has-[>button]:mr-0">
+              <InputGroupButton
                 type="button"
+                variant="secondary"
+                size="icon-xs"
+                aria-label="关闭搜索"
                 onClick={onCloseSearch}
-                className="inline-flex size-5 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+                className="size-5 touch-manipulation rounded-full"
               >
-                <X className="size-3.5" />
-              </button>
-            </div>
+                <X />
+              </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
           ) : (
             <div className="min-w-0 flex-1 truncate text-sm font-semibold">{pageTitle}</div>
           )}

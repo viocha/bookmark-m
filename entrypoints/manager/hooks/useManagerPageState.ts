@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
+  DEFAULT_VIEW_SETTINGS,
   setSavedScrollPositions,
   setTreeExpandedIds,
   type BookmarkDisplayMode,
@@ -52,11 +53,7 @@ export function useManagerPageState() {
     folderPosition: 'top',
     bookmarkPosition: 'top',
   });
-  const [viewSettingsState, setViewSettingsState] = useState<ViewSettings>({
-    listCompact: false,
-    treeCompact: false,
-    listBackBehavior: 'hierarchy',
-  });
+  const [viewSettingsState, setViewSettingsState] = useState<ViewSettings>(DEFAULT_VIEW_SETTINGS);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [normalizing, setNormalizing] = useState(false);
   const [detailState, setDetailState] = useState<DetailState>({

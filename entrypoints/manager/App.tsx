@@ -3,6 +3,7 @@ import { toast } from '@/lib/toast';
 
 import { Toaster } from '@/components/ui/toast';
 import {
+  DEFAULT_VIEW_SETTINGS,
   captureDeletedNodes,
   deleteNodes,
   getDisplayMode,
@@ -534,11 +535,7 @@ export default function App() {
         folderPosition: 'top',
         bookmarkPosition: 'top',
       }),
-      safeCallWithTimeout<ViewSettings>(() => getViewSettings(), {
-        listCompact: false,
-        treeCompact: false,
-        listBackBehavior: 'hierarchy',
-      }),
+      safeCallWithTimeout<ViewSettings>(() => getViewSettings(), DEFAULT_VIEW_SETTINGS),
       getRecentFolders(),
     ]).then(([positions, mode, treeExpandedIds, settings, viewSettings, recentFolders]) => {
       if (cancelled) return;
@@ -1078,6 +1075,7 @@ export default function App() {
         searchPaths={state.searchPaths}
         listCompact={state.viewSettingsState.listCompact}
         treeCompact={state.viewSettingsState.treeCompact}
+        viewSettings={state.viewSettingsState}
         expandedTreeIds={state.expandedTreeIds}
         highlightedNodeId={state.highlightedNodeId}
         getItemMenuContent={getItemMenuContent}

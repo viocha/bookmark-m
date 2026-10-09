@@ -55,24 +55,25 @@ export function BookmarkComposerDialog({
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-3 p-1">
             <div className="grid grid-cols-2 gap-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onPickParent}
-                className="flex w-full items-center justify-between rounded-md border bg-muted/50 px-3 py-2 text-left"
+                className="h-auto w-full justify-between rounded-md px-3 py-2 text-left"
               >
                 <div className="min-w-0">
                   <div className="text-[11px] text-muted-foreground">保存位置</div>
                   <div className="truncate text-sm font-medium">{folderLabel || '选择文件夹'}</div>
                 </div>
-                <ChevronRight className="size-4 text-muted-foreground" />
-              </button>
+                <ChevronRight data-icon="inline-end" />
+              </Button>
               <DropdownMenu modal={false} open={state.recentOpen} onOpenChange={onRecentOpenChange}>
-                <DropdownMenuTrigger render={<button type="button" />} className="flex cursor-pointer items-center justify-between rounded-md border bg-background px-3 py-2 text-left">
+                <DropdownMenuTrigger render={<Button variant="outline" />} className="h-auto justify-between rounded-md px-3 py-2 text-left">
                     <div>
                       <div className="text-[11px] text-muted-foreground">最近位置</div>
                       <div className="text-sm font-medium">{recentFolders.length > 0 ? `${recentFolders.length} 个` : '暂无'}</div>
                     </div>
-                    <History className="size-4 text-muted-foreground" />
+                    <History data-icon="inline-end" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   data-recent-folder-menu
@@ -116,22 +117,24 @@ export function BookmarkComposerDialog({
             {state.mode === 'create' ? <InsertPositionPicker value={state.position} onChange={onPositionChange} /> : null}
             {state.mode === 'edit' && state.targetId ? (
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onRevealLocation}
-                  className="flex h-10 items-center justify-center gap-1.5 rounded-md border bg-muted/50 px-3 text-sm font-medium active:bg-muted"
+                  className="h-10 rounded-md"
                 >
-                  <ChevronRight className="size-4" />
+                  <ChevronRight data-icon="inline-start" />
                   显示所在位置
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="destructive"
                   onClick={onDelete}
-                  className="flex h-10 items-center justify-center gap-1.5 rounded-md border border-destructive/25 bg-destructive/8 px-3 text-sm font-medium text-destructive active:bg-destructive/12"
+                  className="h-10 rounded-md"
                 >
-                  <Trash2 className="size-4" />
+                  <Trash2 data-icon="inline-start" />
                   删除
-                </button>
+                </Button>
               </div>
             ) : null}
           </div>

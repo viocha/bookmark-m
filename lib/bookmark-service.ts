@@ -53,8 +53,26 @@ export interface InsertSettings {
 export interface ViewSettings {
   listCompact: boolean;
   treeCompact: boolean;
+  listTitleLines: 1 | 2 | 3;
+  listCompactTitleLines: 1 | 2 | 3;
+  treeTitleLines: 1 | 2 | 3;
+  treeCompactTitleLines: 1 | 2 | 3;
+  listCompactShowUrl: boolean;
+  treeCompactShowUrl: boolean;
   listBackBehavior: ListBackBehavior;
 }
+
+export const DEFAULT_VIEW_SETTINGS: ViewSettings = {
+  listCompact: false,
+  treeCompact: false,
+  listTitleLines: 1,
+  listCompactTitleLines: 1,
+  treeTitleLines: 1,
+  treeCompactTitleLines: 1,
+  listCompactShowUrl: false,
+  treeCompactShowUrl: false,
+  listBackBehavior: 'hierarchy',
+};
 
 type BookmarkSearchInput = string | { query?: string; title?: string; url?: string };
 type BookmarkCreateInput = { parentId?: string; index?: number; title?: string; url?: string };
@@ -301,13 +319,30 @@ export async function setInsertSettings(settings: InsertSettings): Promise<void>
 
 export async function getViewSettings(): Promise<ViewSettings> {
   const stored = await storageGet<Record<string, unknown>>('local', VIEW_SETTINGS_KEY);
-  const raw = stored[VIEW_SETTINGS_KEY] as Partial<ViewSettings> | undefined;
+  const raw = stored[VIEW_SETTINGS_KEY] as (Partial<ViewSettings> & { bookmarkTitleLines?: number }) | undefined;
   const listBackBehavior = raw?.listBackBehavior;
-  return {
+  const titleLines = (value: unknown): 1 | 2 | 3 => value === 2 || value === 3 ? value : 1;
+  const settings: ViewSettings = {
     listCompact: raw?.listCompact === true,
     treeCompact: raw?.treeCompact === true,
+    listTitleLines: titleLines(raw?.listTitleLines),
+    listCompactTitleLines: titleLines(raw?.listCompactTitleLines),
+    treeTitleLines: titleLines(raw?.treeTitleLines),
+    treeCompactTitleLines: titleLines(raw?.treeCompactTitleLines),
+    listCompactShowUrl: raw?.listCompactShowUrl === true,
+    treeCompactShowUrl: raw?.treeCompactShowUrl === true,
     listBackBehavior: listBackBehavior === 'history' || listBackBehavior === 'close' ? listBackBehavior : 'hierarchy',
   };
+  // 一次性迁移统一行数设置，写入后存储中只保留各模式独立配置。
+  if (raw && 'bookmarkTitleLines' in raw) {
+    const lines = titleLines(raw.bookmarkTitleLines);
+    settings.listTitleLines = lines;
+    settings.listCompactTitleLines = lines;
+    settings.treeTitleLines = lines;
+    settings.treeCompactTitleLines = lines;
+    await setViewSettings(settings);
+  }
+  return settings;
 }
 
 export async function setViewSettings(settings: ViewSettings): Promise<void> {

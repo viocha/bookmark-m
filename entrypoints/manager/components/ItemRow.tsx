@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, CSSProperties, Ref } from 'react';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { getDisplayTitle, isFolder } from '@/lib/bookmark-service';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +17,8 @@ type ItemRowProps = {
   selectionMode: boolean;
   searchPath?: string;
   compact?: boolean;
+  bookmarkTitleLines?: number;
+  compactShowUrl?: boolean;
   treeRow?: boolean;
   compactTree?: boolean;
   longPressMenu?: boolean;
@@ -37,6 +40,8 @@ export function ItemRow({
   selectionMode,
   searchPath,
   compact,
+  bookmarkTitleLines = 1,
+  compactShowUrl = false,
   treeRow,
   compactTree,
   longPressMenu,
@@ -63,7 +68,7 @@ export function ItemRow({
   useImmediateMenuDismiss({ open: menuOpen, onClose: closeMenu, triggerRef, contentRef });
 
   const rowClassName = cn(
-    'block min-w-0 max-w-full flex-1 touch-manipulation select-none text-left text-foreground',
+    'block min-w-0 max-w-full flex-1 text-left',
     compact && 'py-0.5',
   );
 
@@ -78,7 +83,10 @@ export function ItemRow({
         ) : null}
       </div>
     ) : (
-      <div className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-4">{getDisplayTitle(node)}</div>
+      <div className="min-w-0 flex-1">
+        <div data-bookmark-title className="overflow-hidden break-words text-[13px] font-semibold leading-4" style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: bookmarkTitleLines }}>{getDisplayTitle(node)}</div>
+        {compactShowUrl ? <div data-bookmark-url className="truncate text-[11px] leading-4 text-muted-foreground">{getBookmarkMeta(node, folderChildCount)}</div> : null}
+      </div>
     )
   ) : folder ? (
     searchPath ? (
@@ -97,8 +105,8 @@ export function ItemRow({
     )
   ) : (
     <div className="w-full min-w-0 max-w-full">
-      <div className="block truncate text-sm font-semibold">{getDisplayTitle(node)}</div>
-      <div className="block truncate text-[12px] text-muted-foreground">{searchPath ?? getBookmarkMeta(node, folderChildCount)}</div>
+      <div data-bookmark-title className="overflow-hidden break-words text-sm font-semibold" style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: bookmarkTitleLines }}>{getDisplayTitle(node)}</div>
+      <div data-bookmark-url className="block truncate text-[12px] text-muted-foreground">{searchPath ?? getBookmarkMeta(node, folderChildCount)}</div>
     </div>
   );
 
@@ -106,32 +114,46 @@ export function ItemRow({
     <div ref={wrapperRef} style={wrapperStyle} className={cn('relative select-none [-webkit-touch-callout:none]', wrapperClassName)} data-item-menu data-item-node-id={node.id}>
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border bg-card px-2.5 shadow-sm',
+          'relative isolate flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 shadow-sm transition-colors has-[[data-item-content-button]:active]:translate-y-px has-[[data-item-content-button]:focus-visible]:border-ring has-[[data-item-content-button]:focus-visible]:ring-2 has-[[data-item-content-button]:focus-visible]:ring-ring/50',
           treeRow && !compact && 'gap-1.5',
           compact ? 'min-h-7 gap-0 rounded-md px-1.5 py-1' : folder ? (searchPath ? 'min-h-14 py-2.5' : 'min-h-11 py-2') : 'min-h-14 py-2.5',
-          selected && 'border-primary bg-accent',
-          highlighted && 'border-primary/70 bg-accent ring-2 ring-ring/50',
+          selected
+            ? 'border-ring bg-ring/10 has-[[data-item-content-button]:hover]:bg-ring/12'
+            : 'has-[[data-item-content-button]:hover]:bg-muted/40',
+          highlighted && 'border-ring bg-accent ring-2 ring-ring/50',
         )}
       >
+        <Button
+          type="button"
+          variant="ghost"
+          {...contentButtonProps}
+          data-item-content-button
+          aria-label={getDisplayTitle(node)}
+          aria-pressed={selectionMode ? selected : undefined}
+          onClick={onClick}
+          className="absolute inset-0 z-0 h-full w-full touch-manipulation rounded-[inherit] p-0 hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0 active:not-aria-[haspopup]:translate-y-0"
+        />
         {treeRow && folder ? (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             aria-label={expanded ? '折叠文件夹' : '展开文件夹'}
             aria-expanded={expanded}
             disabled={!onToggleExpand}
             onClick={onToggleExpand}
             className={cn(
-              'flex shrink-0 touch-manipulation items-center justify-center text-muted-foreground',
+              'relative z-10 touch-manipulation rounded-md aria-expanded:bg-transparent',
               compact ? 'size-6' : 'size-8',
               onToggleExpand && 'cursor-pointer',
             )}
           >
             {expanded ? <ChevronDown className={cn(compact ? 'size-3.5' : 'size-4')} /> : <ChevronRight className={cn(compact ? 'size-3.5' : 'size-4')} />}
-          </button>
+          </Button>
         ) : (
           <div
             className={cn(
-              'flex shrink-0 items-center justify-center rounded-md',
+              'pointer-events-none flex shrink-0 items-center justify-center rounded-md',
               compact ? 'size-6 rounded-lg' : folder ? 'size-8' : 'size-9',
               folder ? 'bg-accent text-primary' : 'bg-secondary text-secondary-foreground',
             )}
@@ -154,34 +176,20 @@ export function ItemRow({
         {compact ? (
           <div
             className={cn(
-              'flex min-w-0 max-w-full flex-1 items-center gap-0.5',
+              'pointer-events-none flex min-w-0 max-w-full flex-1 items-center gap-0.5',
               compactTree && 'mr-1',
               !treeRow && !onToggleExpand && 'mx-1.5',
             )}
           >
-            <button
-              type="button"
-              {...contentButtonProps}
-              onClick={() => {
-                onClick();
-              }}
-              className={rowClassName}
-            >
+            <div className={rowClassName}>
               {rowContent}
-            </button>
+            </div>
           </div>
         ) : (
-          <div className="flex min-w-0 max-w-full flex-1 items-center gap-1.5">
-            <button
-              type="button"
-              {...contentButtonProps}
-              onClick={() => {
-                onClick();
-              }}
-              className={rowClassName}
-            >
+          <div className="pointer-events-none flex min-w-0 max-w-full flex-1 items-center gap-1.5">
+            <div className={rowClassName}>
               {rowContent}
-            </button>
+            </div>
           </div>
         )}
 
@@ -198,15 +206,17 @@ export function ItemRow({
               afterClose?.();
             }}
           >
-            <DropdownMenuTrigger render={<button
+            <DropdownMenuTrigger render={<Button
                 ref={triggerRef}
                 type="button"
+                variant="outline"
+                size="icon"
+                aria-label="打开项目菜单"
                 data-item-menu-button
                 className={cn(
-                  compact
-                    ? 'flex size-6 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]'
-                    : 'flex size-8 shrink-0 touch-manipulation items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-[background-color,color,transform] active:scale-[0.96]',
-                  menuOpen && 'bg-muted text-foreground',
+                  'relative z-10 touch-manipulation rounded-full active:scale-[0.96]',
+                  compact ? 'size-6' : 'size-8',
+                  menuOpen ? 'bg-muted text-foreground' : 'text-muted-foreground',
                 )}
               />}>
                 <MoreHorizontal className={cn(compact ? 'size-3.5' : 'size-4')} />

@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import type { BookmarkDisplayMode, LaunchContext } from '@/lib/bookmark-service';
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
@@ -64,34 +65,24 @@ export function HeaderToolsMenu({
         side="bottom"
         className="z-[90] w-56 rounded-lg p-1 shadow-xl"
       >
-        <div className="mb-1 grid grid-cols-2 gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              closeMenu();
-              onSwitchMode('list');
-            }}
-            className={cn(
-              'flex h-8 touch-manipulation items-center justify-center rounded-md text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
-              displayMode === 'list' ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground',
-            )}
-          >
+        <ToggleGroup
+          value={[displayMode]}
+          onValueChange={(values) => {
+            const mode = values[0];
+            if (mode === 'list' || mode === 'tree') onSwitchMode(mode);
+          }}
+          variant="outline"
+          spacing={1}
+          className="mb-1 grid w-full grid-cols-2"
+          aria-label="显示模式"
+        >
+          <ToggleGroupItem value="list" onClick={closeMenu} className="w-full touch-manipulation text-xs">
             列表
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              closeMenu();
-              onSwitchMode('tree');
-            }}
-            className={cn(
-              'flex h-8 touch-manipulation items-center justify-center rounded-md text-xs font-medium transition-[background-color,color,transform] active:scale-[0.98]',
-              displayMode === 'tree' ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground',
-            )}
-          >
+          </ToggleGroupItem>
+          <ToggleGroupItem value="tree" onClick={closeMenu} className="w-full touch-manipulation text-xs">
             树形
-          </button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
         {displayMode === 'list' && hasLaunchContext ? (
           <DropdownMenuItem
             disabled={toolsDisabledOnHome}
