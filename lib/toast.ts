@@ -7,11 +7,22 @@ type ToastOptions = {
 };
 
 export function toast(title: string, options: ToastOptions = {}) {
-  return toastManager.add({
+  const action = options.action;
+  let actionHandled = false;
+  const toastId = toastManager.add({
     title,
     description: options.description,
-    actionProps: options.action
-      ? { children: options.action.label, onClick: options.action.onClick }
+    actionProps: action
+      ? {
+          children: action.label,
+          onClick: () => {
+            if (actionHandled) return;
+            actionHandled = true;
+            toastManager.close(toastId);
+            action.onClick();
+          },
+        }
       : undefined,
   });
+  return toastId;
 }
