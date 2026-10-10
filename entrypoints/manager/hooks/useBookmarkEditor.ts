@@ -34,6 +34,7 @@ type UseBookmarkEditorParams = {
   setBookmarkComposer: Dispatch<SetStateAction<BookmarkComposerState>>;
   setLaunchBookmark: Dispatch<SetStateAction<chrome.bookmarks.BookmarkTreeNode | null>>;
   setRecentFolders: Dispatch<SetStateAction<RecentFolder[]>>;
+  onNodeSaved: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onFolderSaved?: (payload: {
     mode: 'create' | 'edit';
     source: 'page' | 'move-panel';
@@ -57,6 +58,7 @@ export function useBookmarkEditor({
   setBookmarkComposer,
   setLaunchBookmark,
   setRecentFolders,
+  onNodeSaved,
   onFolderSaved,
   reload,
 }: UseBookmarkEditorParams) {
@@ -194,7 +196,9 @@ export function useBookmarkEditor({
       savedNode = await updateBookmarkNode(folderComposer.targetId, { title });
     }
 
-    closeFolderComposer(async () => {
+    if (savedNode) onNodeSaved(savedNode);
+    await reload(currentFolderId);
+    closeFolderComposer(() => {
       if (savedNode) {
         onFolderSaved?.({
           mode: folderComposer.mode,
@@ -203,9 +207,8 @@ export function useBookmarkEditor({
           parentId: folderComposer.parentId,
         });
       }
-      await reload(currentFolderId);
     });
-  }, [closeFolderComposer, currentFolderId, folderComposer, onFolderSaved, reload]);
+  }, [closeFolderComposer, currentFolderId, folderComposer, onFolderSaved, onNodeSaved, reload]);
 
   const submitBookmark = useCallback(async () => {
     const title = bookmarkComposer.title.trim();
@@ -226,13 +229,13 @@ export function useBookmarkEditor({
       savedNode = await updateBookmarkNode(bookmarkComposer.targetId, { title, url });
     }
 
-    closeBookmarkComposer(async () => {
-      if (launchContext?.url === url && savedNode) {
-        setLaunchBookmark({ ...savedNode, parentId: bookmarkComposer.parentId });
-      }
-      await reload(currentFolderId);
-    });
-  }, [bookmarkComposer, closeBookmarkComposer, currentFolderId, insertSettingsState, launchContext, reload, setLaunchBookmark]);
+    if (savedNode) onNodeSaved(savedNode);
+    if (launchContext?.url === url && savedNode) {
+      setLaunchBookmark({ ...savedNode, parentId: bookmarkComposer.parentId });
+    }
+    await reload(currentFolderId);
+    closeBookmarkComposer();
+  }, [bookmarkComposer, closeBookmarkComposer, currentFolderId, insertSettingsState, launchContext, onNodeSaved, reload, setLaunchBookmark]);
 
   const bookmarkComposerPath = useMemo(
     () => findFolderPath(folderTree, bookmarkComposer.parentId) || (bookmarkComposer.parentId === HOME_FOLDER_ID ? '首页' : ''),

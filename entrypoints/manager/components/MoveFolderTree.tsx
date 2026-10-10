@@ -102,7 +102,7 @@ export function MoveFolderTree({
                     size="icon-sm"
                     aria-label="打开文件夹菜单"
                     className={cn(
-                      'touch-manipulation rounded-full active:scale-[0.96]',
+                      'touch-manipulation rounded-full',
                       openMenuId === folder.id && 'bg-muted text-foreground',
                     )}
                   />}>

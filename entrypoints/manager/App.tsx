@@ -124,6 +124,9 @@ export default function App() {
     setBookmarkComposer: state.setBookmarkComposer,
     setLaunchBookmark: state.setLaunchBookmark,
     setRecentFolders: state.setRecentFolders,
+    onNodeSaved: (savedNode) => {
+      state.setSearchResults((nodes) => nodes.map((node) => node.id === savedNode.id ? { ...node, ...savedNode } : node));
+    },
     onFolderSaved: ({ mode, source, node, parentId }) => {
       if (source !== 'move-panel') return;
 
@@ -328,7 +331,7 @@ export default function App() {
     const deletableIds = ids.filter((id) => !isProtectedNode(id));
     if (deletableIds.length === 0) {
       toast('这些项目不能删除');
-      return;
+      return false;
     }
 
     state.setActionTarget(null);
@@ -336,6 +339,7 @@ export default function App() {
     const deletedLabel =
       snapshots.length === 1 ? getDisplayTitle(snapshots[0].node) : `已删除 ${snapshots.length} 个项目`;
     await deleteNodes(deletableIds);
+    state.setSearchResults((nodes) => nodes.filter((node) => !deletableIds.includes(node.id)));
     if (state.launchBookmark && deletableIds.includes(state.launchBookmark.id)) {
       state.setLaunchBookmark(null);
     }
@@ -358,6 +362,7 @@ export default function App() {
 
     resetSelection();
     await navigation.reload(state.currentFolderId);
+    return true;
   }, [
     navigation,
     resetSelection,
@@ -367,6 +372,7 @@ export default function App() {
     state.launchContext,
     state.setActionTarget,
     state.setLaunchBookmark,
+    state.setSearchResults,
   ]);
 
   const normalizeAllFoldersAction = useCallback(async () => {
@@ -966,9 +972,9 @@ export default function App() {
       return;
     }
 
-    state.setSearching(true);
     // 刷新同一搜索时保留结果，避免列表清空导致浏览器把滚动位置压回顶部。
     if (searchResultsQueryRef.current !== state.deferredSearch) {
+      state.setSearching(true);
       state.setSearchResults([]);
       state.setSearchPaths({});
       searchResultsQueryRef.current = state.deferredSearch;
@@ -1145,7 +1151,11 @@ export default function App() {
           editor.closeBookmarkComposer(() => navigateToFolder(state.bookmarkComposer.parentId));
         }}
         onBookmarkComposerDelete={() => {
-          editor.closeBookmarkComposer(() => askDelete([state.bookmarkComposer.targetId!]));
+          const targetId = state.bookmarkComposer.targetId;
+          if (!targetId) return;
+          void askDelete([targetId]).then((deleted) => {
+            if (deleted) editor.closeBookmarkComposer();
+          });
         }}
         onSubmitBookmark={() => void editor.submitBookmark()}
         detailState={state.detailState}

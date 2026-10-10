@@ -22,6 +22,7 @@ export function useImmediateMenuDismiss({
 }: UseImmediateMenuDismissOptions) {
   useEffect(() => {
     if (!open) return;
+    let blockedPointerId: number | null = null;
 
     const handleDocumentPointerDown = (event: PointerEvent) => {
       if (eventTargetsElement(event, triggerRef.current) || eventTargetsElement(event, contentRef.current)) {
@@ -32,25 +33,27 @@ export function useImmediateMenuDismiss({
       event.stopPropagation();
       event.stopImmediatePropagation?.();
       swallowNextDocumentClick();
-      onClose();
+      // 保留遮罩直到本次手势松开，避免它在按下时消失后让底层元素进入 :active。
+      blockedPointerId = event.pointerId;
     };
 
-    const handleTriggerPointerDown = (event: PointerEvent) => {
-      if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const handleDocumentPointerEnd = (event: PointerEvent) => {
+      if (event.pointerId !== blockedPointerId) return;
+      blockedPointerId = null;
       event.preventDefault();
       event.stopPropagation();
-      event.stopImmediatePropagation?.();
-      swallowNextDocumentClick();
+      event.stopImmediatePropagation();
       onClose();
     };
 
-    const trigger = triggerRef.current;
     document.addEventListener('pointerdown', handleDocumentPointerDown, true);
-    trigger?.addEventListener('pointerdown', handleTriggerPointerDown, true);
+    document.addEventListener('pointerup', handleDocumentPointerEnd, true);
+    document.addEventListener('pointercancel', handleDocumentPointerEnd, true);
 
     return () => {
       document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
-      trigger?.removeEventListener('pointerdown', handleTriggerPointerDown, true);
+      document.removeEventListener('pointerup', handleDocumentPointerEnd, true);
+      document.removeEventListener('pointercancel', handleDocumentPointerEnd, true);
     };
   }, [contentRef, onClose, open, triggerRef]);
 }

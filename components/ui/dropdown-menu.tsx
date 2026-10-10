@@ -11,8 +11,34 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
+function DropdownMenuTrigger({ className, onPointerDown, onMouseDown, ...props }: MenuPrimitive.Trigger.Props) {
+  const [pressed, setPressed] = React.useState(false)
+  React.useEffect(() => {
+    if (!pressed) return
+    const release = () => setPressed(false)
+    document.addEventListener("pointerup", release, true)
+    document.addEventListener("pointercancel", release, true)
+    return () => {
+      document.removeEventListener("pointerup", release, true)
+      document.removeEventListener("pointercancel", release, true)
+    }
+  }, [pressed])
+  return <MenuPrimitive.Trigger
+    data-slot="dropdown-menu-trigger"
+    data-pressed={pressed ? "" : undefined}
+    className={cn("data-pressed:translate-y-px aria-expanded:translate-y-px", className)}
+    {...props}
+    // 使用 click 切换菜单，让按压反馈在松开时自然恢复，避免 mousedown 提前转移焦点。
+    onPointerDown={(event) => {
+      onPointerDown?.(event)
+      event.preventBaseUIHandler()
+      if (event.button === 0) setPressed(true)
+    }}
+    onMouseDown={(event) => {
+      onMouseDown?.(event)
+      event.preventBaseUIHandler()
+    }}
+  />
 }
 
 function DropdownMenuContent({
@@ -28,7 +54,11 @@ function DropdownMenuContent({
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
   return (
-    <MenuPrimitive.Portal>
+    <MenuPrimitive.Portal className="relative z-50">
+      <MenuPrimitive.Backdrop
+        data-slot="dropdown-menu-dismiss-backdrop"
+        className="pointer-events-none fixed inset-0 data-closed:pointer-events-auto"
+      />
       <MenuPrimitive.Positioner
         className="isolate z-50 outline-none"
         align={align}

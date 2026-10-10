@@ -214,7 +214,7 @@ export function ItemRow({
                 aria-label="打开项目菜单"
                 data-item-menu-button
                 className={cn(
-                  'relative z-10 touch-manipulation rounded-full active:scale-[0.96]',
+                  'relative z-10 touch-manipulation rounded-full',
                   compact ? 'size-6' : 'size-8',
                   menuOpen ? 'bg-muted text-foreground' : 'text-muted-foreground',
                 )}

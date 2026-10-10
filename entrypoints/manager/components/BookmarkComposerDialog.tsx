@@ -67,7 +67,7 @@ export function BookmarkComposerDialog({
                 </div>
                 <ChevronRight data-icon="inline-end" />
               </Button>
-              <DropdownMenu modal={false} open={state.recentOpen} onOpenChange={onRecentOpenChange}>
+              <DropdownMenu open={state.recentOpen} onOpenChange={onRecentOpenChange}>
                 <DropdownMenuTrigger render={<Button variant="outline" />} className="h-auto justify-between rounded-md px-3 py-2 text-left">
                     <div>
                       <div className="text-[11px] text-muted-foreground">最近位置</div>
