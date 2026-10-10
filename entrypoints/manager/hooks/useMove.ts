@@ -57,9 +57,9 @@ export function useMove({
 
     if (moveState.ids.length === 0) return;
     await moveNodes(moveState.ids, moveState.targetFolderId, insertSettingsState);
+    await reload(currentFolderId);
     resetSelection();
     setMoveState({ open: false, mode: 'move', ids: [], query: '', targetFolderId: currentFolderId });
-    await reload(currentFolderId);
   }, [currentFolderId, insertSettingsState, moveState, reload, resetSelection, setBookmarkComposer, setMoveState]);
 
   const filteredFolderTree = useMemo(() => filterFolderTree(folderTree, moveState.query), [folderTree, moveState.query]);

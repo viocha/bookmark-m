@@ -1,4 +1,5 @@
 import { Search, X } from 'lucide-react';
+import type { Ref } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { MoveState } from '../types';
 
 type MovePanelLayoutProps = {
+  containerRef: Ref<HTMLDivElement>;
   state: MoveState;
   onClose: () => void;
   onSubmit: () => void;
@@ -14,11 +16,11 @@ type MovePanelLayoutProps = {
   children: React.ReactNode;
 };
 
-export function MovePanelLayout({ state, onClose, onSubmit, onQueryChange, children }: MovePanelLayoutProps) {
+export function MovePanelLayout({ containerRef, state, onClose, onSubmit, onQueryChange, children }: MovePanelLayoutProps) {
   if (!state.open) return null;
 
   return (
-    <div className="fixed inset-0 z-[140] flex flex-col bg-background/98 backdrop-blur">
+    <div ref={containerRef} data-move-panel className="fixed inset-0 z-50 flex flex-col bg-background/98 backdrop-blur">
       <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
         <Button variant="outline" size="icon" className="size-8 rounded-full" onClick={onClose}>
           <X className="size-4" />

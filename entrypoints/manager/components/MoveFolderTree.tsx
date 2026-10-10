@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, Folder, FolderPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
 
 type MoveFolderTreeProps = {
+  portalContainer: RefObject<HTMLDivElement | null>;
   nodes: FolderTreeNode[];
   expandedIds: string[];
   targetFolderId: string;
@@ -20,6 +22,7 @@ type MoveFolderTreeProps = {
 };
 
 export function MoveFolderTree({
+  portalContainer,
   nodes,
   expandedIds,
   targetFolderId,
@@ -62,7 +65,7 @@ export function MoveFolderTree({
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="size-5 hover:bg-transparent aria-expanded:bg-transparent"
+                  className="size-5 hover:bg-transparent aria-expanded:bg-transparent active:not-aria-[haspopup]:translate-y-0"
                   aria-label={expanded ? '折叠文件夹' : '展开文件夹'}
                   aria-expanded={expanded}
                   disabled={!selectable}
@@ -80,7 +83,7 @@ export function MoveFolderTree({
                 disabled={!selectable}
                 aria-pressed={targetFolderId === folder.id}
                 onClick={() => onSelectTarget(folder)}
-                className="min-w-0 flex-1 justify-start gap-1.5 px-1.5 py-0 text-left hover:bg-transparent"
+                className="min-w-0 flex-1 justify-start gap-1.5 px-1.5 py-0 text-left hover:bg-transparent active:not-aria-[haspopup]:translate-y-0"
               >
                 <Folder data-icon="inline-start" />
                 <span className="min-w-0 flex-1 truncate">{folder.title}</span>
@@ -109,6 +112,7 @@ export function MoveFolderTree({
                     <MoreHorizontal className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
+                  portalContainer={portalContainer}
                   ref={openMenuId === folder.id ? contentRef : undefined}
                   align="end"
                   side="bottom"

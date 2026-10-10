@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { FolderTreeNode } from '@/lib/bookmark-service';
 
 import type { MoveState } from '../types';
@@ -31,11 +32,13 @@ export function MovePanel({
   onMoveRenameFolder,
   onMoveDeleteFolder,
 }: MovePanelProps) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
   return (
-    <MovePanelLayout state={moveState} onClose={onMoveClose} onSubmit={onSubmitMove} onQueryChange={onMoveQueryChange}>
+    <MovePanelLayout containerRef={panelRef} state={moveState} onClose={onMoveClose} onSubmit={onSubmitMove} onQueryChange={onMoveQueryChange}>
       {filteredFolderTree.length > 0 ? (
         <MoveFolderTree
           nodes={filteredFolderTree}
+          portalContainer={panelRef}
           expandedIds={moveTreeExpandedIds}
           targetFolderId={moveState.targetFolderId}
           movingIds={moveState.ids}

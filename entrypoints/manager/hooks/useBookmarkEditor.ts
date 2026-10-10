@@ -198,16 +198,15 @@ export function useBookmarkEditor({
 
     if (savedNode) onNodeSaved(savedNode);
     await reload(currentFolderId);
-    closeFolderComposer(() => {
-      if (savedNode) {
-        onFolderSaved?.({
-          mode: folderComposer.mode,
-          source: folderComposer.source ?? 'page',
-          node: savedNode,
-          parentId: folderComposer.parentId,
-        });
-      }
-    });
+    if (savedNode) {
+      onFolderSaved?.({
+        mode: folderComposer.mode,
+        source: folderComposer.source ?? 'page',
+        node: savedNode,
+        parentId: folderComposer.parentId,
+      });
+    }
+    closeFolderComposer();
   }, [closeFolderComposer, currentFolderId, folderComposer, onFolderSaved, onNodeSaved, reload]);
 
   const submitBookmark = useCallback(async () => {
