@@ -1,9 +1,11 @@
 import { ChevronRight, History, Trash2 } from 'lucide-react';
+import { useCallback } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+import { Field, FieldGroup } from '@/components/ui/field';
+import { InputGroup, InputGroupTextarea } from '@/components/ui/input-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { InsertPosition, RecentFolder } from '@/lib/bookmark-service';
 
@@ -43,16 +45,28 @@ export function BookmarkComposerDialog({
   onDelete,
   onSubmit,
 }: BookmarkComposerDialogProps) {
+  const initializeTextarea = useCallback((textarea: HTMLTextAreaElement | null) => {
+    if (!textarea || !state.open) return;
+    textarea.setSelectionRange(0, 0);
+    textarea.scrollTop = 0;
+    textarea.scrollLeft = 0;
+    const viewport = textarea.closest('[data-slot="scroll-area-viewport"]');
+    if (viewport) {
+      viewport.scrollTop = 0;
+      viewport.scrollLeft = 0;
+    }
+  }, [state.open]);
+
   return (
     <Dialog open={state.open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex flex-col p-4"
+        className="flex max-h-[calc(var(--app-height)-2rem)] flex-col p-4"
       >
-        <DialogHeader>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{state.mode === 'create' ? '添加书签' : '编辑书签'}</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea className="flex min-h-0 flex-1 flex-col [&>[data-slot=scroll-area-viewport]]:min-h-0">
           <div className="flex flex-col gap-3 p-1">
             <div className="grid grid-cols-2 gap-2">
               <Button
@@ -95,25 +109,59 @@ export function BookmarkComposerDialog({
                       ))}
                     </DropdownMenuGroup>
                   ) : (
-                    <DropdownMenuLabel className="text-muted-foreground">暂无最近位置</DropdownMenuLabel>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="text-muted-foreground">暂无最近位置</DropdownMenuLabel>
+                    </DropdownMenuGroup>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <Input
-              autoFocus={state.mode === 'create'}
-              value={state.title}
-              onFocus={(event) => {
-                if (state.mode !== 'create') return;
+            <FieldGroup className="gap-3">
+              <Field>
+                <InputGroup className="h-auto text-base md:text-sm">
+                  <ScrollArea className="h-[calc(2lh+1rem)] w-full rounded-[inherit] [&_[data-slot=scroll-area-viewport]]:overscroll-contain">
+                    <InputGroupTextarea
+                      ref={initializeTextarea}
+                      rows={2}
+                      className="min-h-[calc(2lh+1rem)] overflow-hidden"
+                      aria-label="标题"
+                      autoFocus={state.mode === 'create'}
+                      value={state.title}
+                      onFocus={(event) => {
+                        if (state.mode !== 'create') return;
 
-                const input = event.currentTarget;
-                input.setSelectionRange(0, input.value.length, 'backward');
-                input.scrollLeft = 0;
-              }}
-              onChange={(event) => onTitleChange(event.target.value)}
-              placeholder="标题"
-            />
-            <Input value={state.url} onChange={(event) => onUrlChange(event.target.value)} placeholder="example.com" />
+                        const input = event.currentTarget;
+                        input.setSelectionRange(0, input.value.length, 'backward');
+                        input.scrollTop = 0;
+                        input.scrollLeft = 0;
+                        const viewport = input.closest('[data-slot="scroll-area-viewport"]');
+                        if (viewport) viewport.scrollTop = 0;
+                      }}
+                      onChange={(event) => onTitleChange(event.target.value)}
+                      placeholder="标题"
+                    />
+                  </ScrollArea>
+                </InputGroup>
+              </Field>
+              <Field>
+                <InputGroup className="h-auto text-base md:text-sm">
+                  <ScrollArea className="h-[calc(3lh+1rem)] w-full rounded-[inherit] [&_[data-slot=scroll-area-viewport]]:overscroll-contain">
+                    <InputGroupTextarea
+                      ref={initializeTextarea}
+                      rows={3}
+                      className="min-h-[calc(3lh+1rem)] overflow-hidden"
+                      aria-label="URL"
+                      value={state.url}
+                      onChange={(event) => onUrlChange(event.target.value)}
+                      placeholder="example.com"
+                      inputMode="url"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                    />
+                  </ScrollArea>
+                </InputGroup>
+              </Field>
+            </FieldGroup>
             {state.mode === 'create' ? <InsertPositionPicker value={state.position} onChange={onPositionChange} /> : null}
             {state.mode === 'edit' && state.targetId ? (
               <div className="grid grid-cols-2 gap-2">
@@ -139,7 +187,7 @@ export function BookmarkComposerDialog({
             ) : null}
           </div>
         </ScrollArea>
-        <Button className="h-10 w-full rounded-md" onClick={onSubmit}>
+        <Button className="h-10 w-full shrink-0 rounded-md" onClick={onSubmit}>
           保存
         </Button>
       </DialogContent>
