@@ -149,7 +149,7 @@ export function BookmarkComposerDialog({
                     <InputGroupTextarea
                       ref={initializeTextarea}
                       rows={3}
-                      className="min-h-[calc(3lh+1rem)] overflow-hidden"
+                      className="min-h-[calc(3lh+1rem)] overflow-hidden break-all"
                       aria-label="URL"
                       value={state.url}
                       onChange={(event) => onUrlChange(event.target.value)}
