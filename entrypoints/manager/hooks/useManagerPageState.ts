@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   DEFAULT_VIEW_SETTINGS,
-  setSavedScrollPositions,
   setTreeExpandedIds,
   type BookmarkDisplayMode,
   type FolderTreeNode,
@@ -19,7 +18,6 @@ export function useManagerPageState() {
   const reloadRequestRef = useRef(0);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   const scrollPositionsRef = useRef<Record<string, number>>({});
-  const scrollPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toolsMenuRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const currentFolderIdRef = useRef(HOME_FOLDER_ID);
@@ -106,15 +104,6 @@ export function useManagerPageState() {
     currentFolderIdRef.current = currentFolderId;
   }, [currentFolderId]);
 
-  const persistScrollPositions = useCallback(() => {
-    if (scrollPersistTimerRef.current) {
-      clearTimeout(scrollPersistTimerRef.current);
-    }
-
-    scrollPersistTimerRef.current = setTimeout(() => {
-      void safeCall(() => setSavedScrollPositions({ ...scrollPositionsRef.current }), undefined);
-    }, 120);
-  }, []);
 
   const persistExpandedTreeIds = useCallback((ids: string[]) => {
     void safeCall(() => setTreeExpandedIds(ids), undefined);
@@ -124,7 +113,6 @@ export function useManagerPageState() {
     reloadRequestRef,
     scrollAreaRef,
     scrollPositionsRef,
-    scrollPersistTimerRef,
     toolsMenuRef,
     searchInputRef,
     currentFolderIdRef,
@@ -197,7 +185,6 @@ export function useManagerPageState() {
     moveState,
     setMoveState,
     deferredSearch,
-    persistScrollPositions,
     persistExpandedTreeIds,
   };
 }

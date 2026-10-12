@@ -1,7 +1,6 @@
 export const LAST_FOLDER_KEY = 'bookmark-m-last-folder';
 export const RECENT_FOLDER_KEY = 'bookmark-m-recent-folders';
 export const LAUNCH_CONTEXT_KEY = 'bookmark-m-launch-context';
-export const SCROLL_POSITIONS_KEY = 'bookmark-m-scroll-positions';
 export const DISPLAY_MODE_KEY = 'bookmark-m-display-mode';
 export const TREE_EXPANDED_KEY = 'bookmark-m-tree-expanded';
 export const INSERT_SETTINGS_KEY = 'bookmark-m-insert-settings';
@@ -260,28 +259,6 @@ export async function getInitialFolderId() {
 
 export async function setLastFolderId(id: string) {
   await storageSet('local', { [LAST_FOLDER_KEY]: id });
-}
-
-export async function getSavedScrollPositions(): Promise<Record<string, number>> {
-  const stored = await storageGet<Record<string, unknown>>('local', SCROLL_POSITIONS_KEY);
-  const raw = stored[SCROLL_POSITIONS_KEY];
-
-  if (!raw || typeof raw !== 'object') {
-    return {};
-  }
-
-  const positions: Record<string, number> = {};
-  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      positions[key] = value;
-    }
-  }
-
-  return positions;
-}
-
-export async function setSavedScrollPositions(positions: Record<string, number>): Promise<void> {
-  await storageSet('local', { [SCROLL_POSITIONS_KEY]: positions });
 }
 
 export async function getDisplayMode(): Promise<BookmarkDisplayMode> {

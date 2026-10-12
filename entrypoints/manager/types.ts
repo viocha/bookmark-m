@@ -28,6 +28,7 @@ export type MoveState = {
   ids: string[];
   query: string;
   targetFolderId: string;
+  position?: InsertPosition;
 };
 
 export type DetailState = {

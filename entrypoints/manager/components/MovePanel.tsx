@@ -12,6 +12,7 @@ type MovePanelProps = {
   onMoveClose: () => void;
   onSubmitMove: () => void;
   onMoveQueryChange: (query: string) => void;
+  onMovePositionChange: (position: MoveState['position']) => void;
   onToggleMoveExpanded: (folderId: string) => void;
   onMoveSelectTarget: (folder: FolderTreeNode) => void;
   onMoveCreateFolder: (folder: FolderTreeNode) => void;
@@ -26,6 +27,7 @@ export function MovePanel({
   onMoveClose,
   onSubmitMove,
   onMoveQueryChange,
+  onMovePositionChange,
   onToggleMoveExpanded,
   onMoveSelectTarget,
   onMoveCreateFolder,
@@ -34,7 +36,7 @@ export function MovePanel({
 }: MovePanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   return (
-    <MovePanelLayout containerRef={panelRef} state={moveState} onClose={onMoveClose} onSubmit={onSubmitMove} onQueryChange={onMoveQueryChange}>
+    <MovePanelLayout containerRef={panelRef} state={moveState} onClose={onMoveClose} onSubmit={onSubmitMove} onQueryChange={onMoveQueryChange} onPositionChange={onMovePositionChange}>
       {filteredFolderTree.length > 0 ? (
         <MoveFolderTree
           nodes={filteredFolderTree}

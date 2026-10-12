@@ -43,7 +43,6 @@ type UseNavigationParams = {
   reloadRequestRef: MutableRefObject<number>;
   scrollAreaRef: RefObject<HTMLDivElement | null>;
   scrollPositionsRef: MutableRefObject<Record<string, number>>;
-  persistScrollPositions: () => void;
   setLoading: Dispatch<SetStateAction<boolean>>;
   setErrorMessage: Dispatch<SetStateAction<string>>;
   resetSelection: () => void;
@@ -78,7 +77,6 @@ export function useNavigation({
   reloadRequestRef,
   scrollAreaRef,
   scrollPositionsRef,
-  persistScrollPositions,
   setLoading,
   setErrorMessage,
   resetSelection,
@@ -89,8 +87,7 @@ export function useNavigation({
       Object.entries(scrollPositionsRef.current).filter(([key]) => key === TREE_SCROLL_KEY || keep.has(key)),
     );
     scrollPositionsRef.current = nextPositions;
-    persistScrollPositions();
-  }, [persistScrollPositions, scrollPositionsRef]);
+  }, [scrollPositionsRef]);
 
   const getScrollViewport = useCallback(
     () => scrollAreaRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLDivElement | null,
@@ -106,8 +103,7 @@ export function useNavigation({
     const viewport = getScrollViewport();
     if (!viewport) return;
     scrollPositionsRef.current[getScrollKey()] = viewport.scrollTop;
-    persistScrollPositions();
-  }, [getScrollKey, getScrollViewport, persistScrollPositions, scrollPositionsRef]);
+  }, [getScrollKey, getScrollViewport, scrollPositionsRef]);
 
   const reload = useCallback(async (preferredFolderId?: string) => {
     const requestId = ++reloadRequestRef.current;
@@ -279,7 +275,6 @@ export function useNavigation({
   return {
     getScrollViewport,
     getScrollKey,
-    persistScrollPositions,
     rememberViewportScroll,
     reload,
     goToFolder,

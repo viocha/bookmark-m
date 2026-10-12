@@ -12,7 +12,6 @@ import {
   getFolderPathNodes,
   getInsertSettings,
   getRecentFolders,
-  getSavedScrollPositions,
   getTreeExpandedIds,
   getViewSettings,
   isProtectedNode,
@@ -104,7 +103,6 @@ export default function App() {
     reloadRequestRef: state.reloadRequestRef,
     scrollAreaRef: state.scrollAreaRef,
     scrollPositionsRef: state.scrollPositionsRef,
-    persistScrollPositions: state.persistScrollPositions,
     setLoading: state.setLoading,
     setErrorMessage: state.setErrorMessage,
     resetSelection,
@@ -534,7 +532,6 @@ export default function App() {
     let cancelled = false;
 
     void Promise.all([
-      safeCallWithTimeout<Record<string, number>>(() => getSavedScrollPositions(), {}),
       safeCallWithTimeout<BookmarkDisplayMode>(() => getDisplayMode(), 'list'),
       safeCallWithTimeout<string[]>(() => getTreeExpandedIds(), []),
       safeCallWithTimeout<InsertSettings>(() => getInsertSettings(), {
@@ -543,9 +540,8 @@ export default function App() {
       }),
       safeCallWithTimeout<ViewSettings>(() => getViewSettings(), DEFAULT_VIEW_SETTINGS),
       getRecentFolders(),
-    ]).then(([positions, mode, treeExpandedIds, settings, viewSettings, recentFolders]) => {
+    ]).then(([mode, treeExpandedIds, settings, viewSettings, recentFolders]) => {
       if (cancelled) return;
-      state.scrollPositionsRef.current = positions;
       state.setDisplayModeState(mode);
       state.setExpandedTreeIds(treeExpandedIds);
       state.setInsertSettingsState(settings);
@@ -846,7 +842,6 @@ export default function App() {
 
     const handleScroll = () => {
       state.scrollPositionsRef.current[navigation.getScrollKey()] = viewport.scrollTop;
-      navigation.persistScrollPositions();
     };
 
     viewport.addEventListener('scroll', handleScroll, { passive: true });
@@ -856,7 +851,6 @@ export default function App() {
   }, [
     navigation.getScrollKey,
     navigation.getScrollViewport,
-    navigation.persistScrollPositions,
     state.currentFolderId,
     state.displayMode,
     state.loading,
@@ -881,13 +875,6 @@ export default function App() {
     state.scrollPositionsRef,
   ]);
 
-  useEffect(() => {
-    return () => {
-      if (state.scrollPersistTimerRef.current) {
-        clearTimeout(state.scrollPersistTimerRef.current);
-      }
-    };
-  }, [state.scrollPersistTimerRef]);
 
   useEffect(() => {
     if (state.searchOpen) {
@@ -1180,6 +1167,7 @@ export default function App() {
         onMoveClose={closeMovePanel}
         onSubmitMove={() => void move.submitMove()}
         onMoveQueryChange={(query) => state.setMoveState((current) => ({ ...current, query }))}
+        onMovePositionChange={(position) => state.setMoveState((current) => ({ ...current, position }))}
         onToggleMoveExpanded={move.toggleMoveFolderExpanded}
         onMoveSelectTarget={(folder) => {
           state.setMoveState((current) => ({ ...current, targetFolderId: folder.id }));

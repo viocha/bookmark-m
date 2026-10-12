@@ -37,6 +37,14 @@ export function useMove({
   reload,
 }: UseMoveParams) {
   const openMoveDialog = useCallback((ids: string[]) => {
+    const folderIds = new Set<string>();
+    const collectFolderIds = (nodes: FolderTreeNode[]) => {
+      for (const node of nodes) {
+        folderIds.add(node.id);
+        collectFolderIds(node.children);
+      }
+    };
+    collectFolderIds(folderTree);
     setActionTarget(null);
     setExpandedMoveFolderIds((prev) => Array.from(new Set([...prev, ...breadcrumbs.map((node) => node.id), ...folderTree.map((node) => node.id)])));
     setMoveState({
@@ -45,8 +53,11 @@ export function useMove({
       ids,
       query: '',
       targetFolderId: currentFolderId,
+      position: ids.every((id) => folderIds.has(id))
+        ? insertSettingsState.folderPosition
+        : insertSettingsState.bookmarkPosition,
     });
-  }, [breadcrumbs, currentFolderId, folderTree, setActionTarget, setExpandedMoveFolderIds, setMoveState]);
+  }, [breadcrumbs, currentFolderId, folderTree, insertSettingsState, setActionTarget, setExpandedMoveFolderIds, setMoveState]);
 
   const submitMove = useCallback(async () => {
     if (moveState.mode === 'pick-bookmark-parent') {
@@ -56,7 +67,9 @@ export function useMove({
     }
 
     if (moveState.ids.length === 0) return;
-    await moveNodes(moveState.ids, moveState.targetFolderId, insertSettingsState);
+    await moveNodes(moveState.ids, moveState.targetFolderId, moveState.position
+      ? { folderPosition: moveState.position, bookmarkPosition: moveState.position }
+      : insertSettingsState);
     await reload(currentFolderId);
     resetSelection();
     setMoveState({ open: false, mode: 'move', ids: [], query: '', targetFolderId: currentFolderId });

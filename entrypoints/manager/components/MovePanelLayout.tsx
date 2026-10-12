@@ -2,8 +2,10 @@ import { Search, X } from 'lucide-react';
 import type { Ref } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 import type { MoveState } from '../types';
 
@@ -13,10 +15,11 @@ type MovePanelLayoutProps = {
   onClose: () => void;
   onSubmit: () => void;
   onQueryChange: (query: string) => void;
+  onPositionChange: (position: MoveState['position']) => void;
   children: React.ReactNode;
 };
 
-export function MovePanelLayout({ containerRef, state, onClose, onSubmit, onQueryChange, children }: MovePanelLayoutProps) {
+export function MovePanelLayout({ containerRef, state, onClose, onSubmit, onQueryChange, onPositionChange, children }: MovePanelLayoutProps) {
   if (!state.open) return null;
 
   return (
@@ -34,16 +37,35 @@ export function MovePanelLayout({ containerRef, state, onClose, onSubmit, onQuer
       </div>
 
       <div className="px-3 py-2">
-        <div className="flex items-center gap-1 rounded-full border border-border bg-card px-2">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
-          <Input
+        <InputGroup className="rounded-full">
+          <InputGroupAddon><Search /></InputGroupAddon>
+          <InputGroupInput
             value={state.query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="搜索目标文件夹"
-            className="h-8 min-w-0 rounded-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:border-0 focus:ring-0"
+            aria-label="搜索目标文件夹"
           />
-        </div>
+        </InputGroup>
       </div>
+
+      {state.mode === 'move' ? (
+        <Field className="px-3 pb-2">
+          <FieldLabel>移动到</FieldLabel>
+          <ToggleGroup
+            aria-label="本次移动位置"
+            variant="outline"
+            value={[state.position ?? 'top']}
+            onValueChange={(values) => {
+              const value = values[0];
+              if (value === 'top' || value === 'bottom') onPositionChange(value);
+            }}
+            className="grid w-full grid-cols-2"
+          >
+            <ToggleGroupItem value="top">顶部</ToggleGroupItem>
+            <ToggleGroupItem value="bottom">底部</ToggleGroupItem>
+          </ToggleGroup>
+        </Field>
+      ) : null}
 
       <ScrollArea className="min-h-0 flex-1 [&_[data-slot='scroll-area-viewport']]:overflow-visible">
         <div className="space-y-1 px-2 pb-4">{children}</div>
