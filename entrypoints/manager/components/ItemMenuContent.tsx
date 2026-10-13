@@ -62,22 +62,6 @@ export function ItemMenuContent({
   if (node.url) {
     return (
       <>
-        {deferredSearch && node.parentId ? (
-          <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
-            <ChevronRight className={menuIconClass} />
-            显示位置
-          </DropdownMenuItem>
-        ) : null}
-        <DropdownMenuItem
-          onClick={() => {
-            onClose();
-            onCopyUrl(node.url!);
-          }}
-          className={menuButtonClass}
-        >
-          <Copy className={menuIconClass} />
-          复制链接
-        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             onClose();
@@ -86,17 +70,7 @@ export function ItemMenuContent({
           className={menuButtonClass}
         >
           <Pencil className={menuIconClass} />
-          编辑书签
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            onClose();
-            onOpenDetails(node);
-          }}
-          className={menuButtonClass}
-        >
-          <Info className={menuIconClass} />
-          查看详情
+          编辑
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
@@ -118,6 +92,32 @@ export function ItemMenuContent({
           <ArrowUpToLine className={menuIconClass} />
           移动到顶部
         </DropdownMenuItem>
+        {deferredSearch && node.parentId ? (
+          <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
+            <ChevronRight className={menuIconClass} />
+            显示位置
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuItem
+          onClick={() => {
+            onClose();
+            onCopyUrl(node.url!);
+          }}
+          className={menuButtonClass}
+        >
+          <Copy className={menuIconClass} />
+          复制链接
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            onClose();
+            onOpenDetails(node);
+          }}
+          className={menuButtonClass}
+        >
+          <Info className={menuIconClass} />
+          查看详情
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onDelete(node.id)} variant="destructive" className={menuButtonClass}>
           <Trash2 className={menuIconClass} />
           删除
@@ -128,6 +128,30 @@ export function ItemMenuContent({
 
   return (
     <>
+      {!protectedNode ? (
+        <DropdownMenuItem
+          onClick={() => {
+            onClose();
+            onRenameFolder(node, node.parentId ?? currentFolderId);
+          }}
+          className={menuButtonClass}
+        >
+          <Pencil className={menuIconClass} />
+          编辑
+        </DropdownMenuItem>
+      ) : null}
+      {!protectedNode ? (
+        <DropdownMenuItem
+          onClick={() => {
+            onClose();
+            onMove(node.id);
+          }}
+          className={menuButtonClass}
+        >
+          <Move className={menuIconClass} />
+          移动
+        </DropdownMenuItem>
+      ) : null}
       <DropdownMenuItem
         onClick={() => {
           onClose();
@@ -212,30 +236,6 @@ export function ItemMenuContent({
         >
           <SquareMinus className={menuIconClass} />
           递归折叠
-        </DropdownMenuItem>
-      ) : null}
-      {!protectedNode ? (
-        <DropdownMenuItem
-          onClick={() => {
-            onClose();
-            onRenameFolder(node, node.parentId ?? currentFolderId);
-          }}
-          className={menuButtonClass}
-        >
-          <Pencil className={menuIconClass} />
-          重命名
-        </DropdownMenuItem>
-      ) : null}
-      {!protectedNode ? (
-        <DropdownMenuItem
-          onClick={() => {
-            onClose();
-            onMove(node.id);
-          }}
-          className={menuButtonClass}
-        >
-          <Move className={menuIconClass} />
-          移动
         </DropdownMenuItem>
       ) : null}
       {!protectedNode ? (

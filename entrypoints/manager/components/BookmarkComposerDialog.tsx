@@ -1,5 +1,5 @@
 import { ChevronRight, History, Trash2 } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -45,6 +45,7 @@ export function BookmarkComposerDialog({
   onDelete,
   onSubmit,
 }: BookmarkComposerDialogProps) {
+  const titleRef = useRef<HTMLTextAreaElement | null>(null);
   const initializeTextarea = useCallback((textarea: HTMLTextAreaElement | null) => {
     if (!textarea || !state.open) return;
     textarea.setSelectionRange(0, 0);
@@ -60,6 +61,11 @@ export function BookmarkComposerDialog({
   return (
     <Dialog open={state.open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
       <DialogContent
+        initialFocus={state.mode === 'edit' ? () => {
+          titleRef.current?.focus({ preventScroll: true });
+          initializeTextarea(titleRef.current);
+          return false;
+        } : undefined}
         aria-describedby={undefined}
         className="flex max-h-[calc(var(--app-height)-2rem)] flex-col p-4"
       >
@@ -121,7 +127,10 @@ export function BookmarkComposerDialog({
                 <InputGroup className="h-auto text-base md:text-sm">
                   <ScrollArea className="h-[calc(2lh+1rem)] w-full rounded-[inherit] [&_[data-slot=scroll-area-viewport]]:overscroll-contain">
                     <InputGroupTextarea
-                      ref={initializeTextarea}
+                      ref={(textarea) => {
+                        titleRef.current = textarea;
+                        initializeTextarea(textarea);
+                      }}
                       rows={2}
                       className="min-h-[calc(2lh+1rem)] overflow-hidden"
                       aria-label="标题"
