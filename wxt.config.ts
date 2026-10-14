@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
   autoIcons: {
-    baseIconPath: './assets/icon.svg',
+    baseIconPath: './assets/icon.png',
   },
   manifest: {
     name: '__MSG_extName__',
