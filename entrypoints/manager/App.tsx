@@ -505,6 +505,11 @@ export default function App() {
         void reorderNodeWithinFolder(targetNode.id, targetNode.parentId, 0)
           .catch(() => toast('移动失败，请重试'));
       }}
+      onMoveToBottom={(targetNode) => {
+        if (!targetNode.parentId) return;
+        void reorderNodeWithinFolder(targetNode.id, targetNode.parentId, Number.MAX_SAFE_INTEGER)
+          .catch(() => toast('移动失败，请重试'));
+      }}
       onDelete={(id) => {
         void askDelete([id]);
       }}

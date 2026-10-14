@@ -1,4 +1,4 @@
-import { ArrowUpToLine, Bookmark, ChevronRight, Copy, FilePenLine, FolderPlus, Info, Move, Pencil, Play, SquareMinus, SquarePlus, Star, Trash2 } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpToLine, Bookmark, ChevronRight, Copy, FilePenLine, FolderPlus, Info, Move, Pencil, Play, SquareMinus, SquarePlus, Star, Trash2 } from 'lucide-react';
 
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { isProtectedNode } from '@/lib/bookmark-service';
@@ -25,6 +25,7 @@ type ItemMenuContentProps = {
   onRenameFolder: (node: chrome.bookmarks.BookmarkTreeNode, parentId: string) => void;
   onMove: (id: string) => void;
   onMoveToTop: (node: chrome.bookmarks.BookmarkTreeNode) => void;
+  onMoveToBottom: (node: chrome.bookmarks.BookmarkTreeNode) => void;
   onDelete: (id: string) => void;
 };
 
@@ -50,6 +51,7 @@ export function ItemMenuContent({
   onRenameFolder,
   onMove,
   onMoveToTop,
+  onMoveToBottom,
   onDelete,
 }: ItemMenuContentProps) {
   const protectedNode = isProtectedNode(node.id);
@@ -91,6 +93,16 @@ export function ItemMenuContent({
         >
           <ArrowUpToLine className={menuIconClass} />
           移动到顶部
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            onClose(() => onMoveToBottom(node));
+          }}
+          disabled={!node.parentId}
+          className={menuButtonClass}
+        >
+          <ArrowDownToLine className={menuIconClass} />
+          移动到底部
         </DropdownMenuItem>
         {deferredSearch && node.parentId ? (
           <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
