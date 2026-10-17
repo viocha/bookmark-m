@@ -371,7 +371,7 @@ export function ManagerContent({
 
             {(isTreeMode ? roots.length === 0 : visibleNodes.length === 0) ? (
               <div className="rounded-lg border bg-card px-3 py-6 text-center text-sm text-muted-foreground">
-                {deferredSearch ? (searching ? '正在搜索…' : '没有找到匹配的书签。') : loading ? '' : '这个文件夹是空的。'}
+                {deferredSearch ? (searching ? '正在搜索…' : '未找到匹配的书签') : loading ? '' : '文件夹为空'}
               </div>
             ) : (
               <DndContext

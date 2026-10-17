@@ -51,7 +51,7 @@ export function MovePanel({
           onDeleteFolder={onMoveDeleteFolder}
         />
       ) : (
-        <div className="px-3 py-6 text-center text-sm text-muted-foreground">没有找到匹配的文件夹。</div>
+        <div className="px-3 py-6 text-center text-sm text-muted-foreground">未找到匹配的文件夹</div>
       )}
     </MovePanelLayout>
   );

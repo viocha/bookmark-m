@@ -101,14 +101,14 @@ export function SettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined} className="flex h-[min(34rem,calc(var(--app-height)-2rem))] min-h-0 flex-col">
-        <DialogHeader><DialogTitle>全局设置</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>设置</DialogTitle></DialogHeader>
         <Tabs defaultValue="list" className="min-h-0 flex-1">
           <TabsList className="w-full shrink-0" aria-label="设置分类">
             <TabsTrigger value="list">列表</TabsTrigger>
             <TabsTrigger value="tree">树形</TabsTrigger>
             <TabsTrigger value="organize">整理</TabsTrigger>
           </TabsList>
-          <ScrollArea className="min-h-0 flex-1">
+          <ScrollArea className="flex min-h-0 flex-1 flex-col [&>[data-slot=scroll-area-viewport]]:min-h-0">
             <TabsContent value="list" className="p-1">
               <DisplaySettings mode="list" viewSettings={viewSettings} onChange={onViewChange} />
             </TabsContent>

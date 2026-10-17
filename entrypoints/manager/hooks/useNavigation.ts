@@ -263,7 +263,7 @@ export function useNavigation({
       deferredSearch
         ? `搜索：${deferredSearch}`
         : displayMode === 'tree'
-          ? '树形书签'
+          ? 'Bookmark M'
           : currentFolderId === HOME_FOLDER_ID
             ? '首页'
             : currentFolder

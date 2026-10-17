@@ -67,8 +67,8 @@ export function MovePanelLayout({ containerRef, state, onClose, onSubmit, onQuer
         </Field>
       ) : null}
 
-      <ScrollArea className="min-h-0 flex-1 [&_[data-slot='scroll-area-viewport']]:overflow-visible">
-        <div className="space-y-1 px-2 pb-4">{children}</div>
+      <ScrollArea className="flex min-h-0 flex-1 flex-col [&>[data-slot='scroll-area-viewport']]:min-h-0">
+        <div className="flex flex-col gap-1 px-2 pb-4">{children}</div>
       </ScrollArea>
     </div>
   );

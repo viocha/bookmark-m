@@ -149,7 +149,7 @@ export function ItemMenuContent({
           className={menuButtonClass}
         >
           <Pencil className={menuIconClass} />
-          编辑
+          重命名
         </DropdownMenuItem>
       ) : null}
       {!protectedNode ? (

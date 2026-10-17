@@ -141,7 +141,7 @@ export function HeaderToolsMenu({
           className="h-8 rounded-md px-2.5 text-xs font-medium"
         >
           <Settings2 className="size-4" />
-          全局设置
+          设置
         </DropdownMenuItem>
         {launchContext ? <DropdownMenuSeparator className="mx-1 my-1" /> : null}
         {launchContext ? (
