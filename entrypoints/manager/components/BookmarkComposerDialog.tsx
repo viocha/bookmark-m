@@ -173,7 +173,6 @@ export function BookmarkComposerDialog({
                 </InputGroup>
               </Field>
             </FieldGroup>
-            {state.mode === 'create' ? <InsertPositionPicker value={state.position} onChange={onPositionChange} /> : null}
             {state.mode === 'edit' && state.targetId ? (
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -195,6 +194,13 @@ export function BookmarkComposerDialog({
                   删除
                 </Button>
               </div>
+            ) : null}
+            {state.mode === 'create' || state.parentId !== state.originalParentId ? (
+              <InsertPositionPicker
+                value={state.position}
+                onChange={onPositionChange}
+                label={state.mode === 'create' ? '添加到' : '移动到'}
+              />
             ) : null}
           </div>
         </ScrollArea>

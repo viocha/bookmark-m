@@ -223,7 +223,10 @@ export function useBookmarkEditor({
       savedNode = await createBookmark(bookmarkComposer.parentId, title, url, bookmarkComposer.position);
     } else if (bookmarkComposer.targetId) {
       if (bookmarkComposer.parentId !== bookmarkComposer.originalParentId) {
-        await moveNodes([bookmarkComposer.targetId], bookmarkComposer.parentId, insertSettingsState);
+        await moveNodes([bookmarkComposer.targetId], bookmarkComposer.parentId, {
+          ...insertSettingsState,
+          bookmarkPosition: bookmarkComposer.position,
+        });
       }
       savedNode = await updateBookmarkNode(bookmarkComposer.targetId, { title, url });
     }
