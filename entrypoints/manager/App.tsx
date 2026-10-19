@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useRef } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '@/lib/toast';
 
 import { Toaster } from '@/components/ui/toast';
@@ -37,6 +37,7 @@ import { useBookmarkEditor } from './hooks/useBookmarkEditor';
 import { useManagerPageState } from './hooks/useManagerPageState';
 import { useMove } from './hooks/useMove';
 import { useNavigation } from './hooks/useNavigation';
+import { MenuBackLayerContext } from './hooks/menu-back-layer';
 import { flattenTreeNodes, HOME_FOLDER_ID, safeCall, safeCallWithTimeout } from './utils';
 
 type ManagerHistoryState = {
@@ -57,10 +58,15 @@ type ManagerBackLayer =
   | 'details'
   | 'bookmark-composer'
   | 'folder-composer'
+  | 'menu'
   | 'bookmark-recent';
 
 export default function App() {
   const state = useManagerPageState();
+  const [menuBackLayer, setMenuBackLayer] = useState<{ id: symbol; close: () => void } | null>(null);
+  const registerMenuBackLayer = useCallback((id: symbol, close: (() => void) | null) => {
+    setMenuBackLayer((current) => close ? { id, close } : current?.id === id ? null : current);
+  }, []);
   const listHistoryTrailRef = useRef<string[] | null>(null);
   const ignoreSyntheticListPopRef = useRef(false);
   const pendingListTrailRef = useRef<string[] | null>(null);
@@ -170,8 +176,10 @@ export default function App() {
     if (state.bookmarkComposer.open) trail.push('bookmark-composer');
     if (state.folderComposer.open) trail.push('folder-composer');
     if (state.bookmarkComposer.open && state.bookmarkComposer.recentOpen) trail.push('bookmark-recent');
+    if (menuBackLayer) trail.push('menu');
     return trail;
   }, [
+    menuBackLayer,
     state.bookmarkComposer.open,
     state.bookmarkComposer.recentOpen,
     state.detailState.open,
@@ -185,6 +193,9 @@ export default function App() {
   const dismissBackLayers = useCallback((layers: ManagerBackLayer[]) => {
     for (const layer of layers) {
       switch (layer) {
+        case 'menu':
+          menuBackLayer?.close();
+          break;
         case 'bookmark-recent':
           state.setBookmarkComposer((current) => ({ ...current, recentOpen: false }));
           break;
@@ -213,6 +224,7 @@ export default function App() {
       }
     }
   }, [
+    menuBackLayer,
     closeMovePanel,
     editor,
     resetSelection,
@@ -732,7 +744,8 @@ export default function App() {
           pendingListHistoryPushRef.current = null;
           pushVisitedFolderHistory(pendingFolderId);
         } else if (
-          state.viewSettingsState.listBackBehavior === 'history'
+          !pendingTrail?.length
+          && state.viewSettingsState.listBackBehavior === 'history'
           && state.displayMode === 'list'
         ) {
           window.history.replaceState(
@@ -740,7 +753,8 @@ export default function App() {
             '',
           );
         } else if (
-          state.viewSettingsState.listBackBehavior === 'hierarchy'
+          !pendingTrail?.length
+          && state.viewSettingsState.listBackBehavior === 'hierarchy'
           && state.displayMode === 'list'
           && !state.deferredSearch
           && listHistoryTrailRef.current === null
@@ -1001,6 +1015,7 @@ export default function App() {
   }
 
   return (
+    <MenuBackLayerContext.Provider value={registerMenuBackLayer}>
     <div className="flex h-[var(--app-height)] flex-col overflow-hidden bg-background text-foreground">
       <ManagerToolbar
         toolsMenuRef={state.toolsMenuRef}
@@ -1194,5 +1209,6 @@ export default function App() {
 
       <Toaster />
     </div>
+    </MenuBackLayerContext.Provider>
   );
 }

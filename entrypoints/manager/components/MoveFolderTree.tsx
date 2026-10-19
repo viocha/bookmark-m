@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Folder, FolderPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { isProtectedNode, type FolderTreeNode } from '@/lib/bookmark-service';
 import { cn } from '@/lib/utils';
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
+import { useBackMenuState } from '../hooks/menu-back-layer';
 
 type MoveFolderTreeProps = {
   portalContainer: RefObject<HTMLDivElement | null>;
@@ -33,13 +34,13 @@ export function MoveFolderTree({
   onRenameFolder,
   onDeleteFolder,
 }: MoveFolderTreeProps) {
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useBackMenuState<string | null>(null);
   const selectedFolderRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const closeMenu = useCallback(() => {
     setOpenMenuId(null);
-  }, []);
+  }, [setOpenMenuId]);
   useImmediateMenuDismiss({ open: openMenuId !== null, onClose: closeMenu, triggerRef, contentRef });
 
   useLayoutEffect(() => {

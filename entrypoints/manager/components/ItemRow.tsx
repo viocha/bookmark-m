@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Folder, MoreHorizontal } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import type { ButtonHTMLAttributes, CSSProperties, Ref } from 'react';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -8,6 +8,7 @@ import { getDisplayTitle, isFolder } from '@/lib/bookmark-service';
 import { cn } from '@/lib/utils';
 
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
+import { useBackMenuState } from '../hooks/menu-back-layer';
 import { getBookmarkMeta, getFaviconUrl } from '../utils';
 
 type ItemRowProps = {
@@ -57,14 +58,14 @@ export function ItemRow({
 }: ItemRowProps) {
   const folder = isFolder(node);
   const folderItemCount = folderChildCount ?? node.children?.length ?? 0;
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useBackMenuState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const afterMenuCloseRef = useRef<(() => void) | undefined>(undefined);
   const closeMenu = useCallback((afterClose?: () => void) => {
     if (afterClose) afterMenuCloseRef.current = afterClose;
     setMenuOpen(false);
-  }, []);
+  }, [setMenuOpen]);
   useImmediateMenuDismiss({ open: menuOpen, onClose: closeMenu, triggerRef, contentRef });
 
   const rowClassName = cn(

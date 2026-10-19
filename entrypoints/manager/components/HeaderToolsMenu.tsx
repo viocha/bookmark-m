@@ -1,5 +1,5 @@
 import { Bookmark, FilePenLine, FolderPlus, MoreHorizontal, Settings2, SquareCheckBig, Star } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -7,6 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import type { BookmarkDisplayMode, LaunchContext } from '@/lib/bookmark-service';
 import { useImmediateMenuDismiss } from '../hooks/useImmediateMenuDismiss';
+import { useBackMenuState } from '../hooks/menu-back-layer';
 
 type HeaderToolsMenuProps = {
   displayMode: BookmarkDisplayMode;
@@ -41,12 +42,12 @@ export function HeaderToolsMenu({
   onCreateFolder,
   onCreateBookmark,
 }: HeaderToolsMenuProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useBackMenuState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const closeMenu = useCallback(() => {
     setOpen(false);
-  }, []);
+  }, [setOpen]);
   useImmediateMenuDismiss({ open, onClose: closeMenu, triggerRef, contentRef });
 
   return (
