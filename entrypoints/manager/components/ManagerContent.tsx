@@ -246,7 +246,7 @@ export function ManagerContent({
     useSensor(TouchSensor, {
       activationConstraint: {
         // 静止长按才进入排序，手指开始滑动时优先滚动列表。
-        delay: 600,
+        delay: 300,
         tolerance: 3,
       },
     }),

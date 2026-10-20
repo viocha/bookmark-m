@@ -1,3 +1,5 @@
+import { useCallback, useRef } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -23,23 +25,28 @@ export function FolderComposerDialog({
   onPositionChange,
   onSubmit,
 }: FolderComposerDialogProps) {
+  const titleRef = useRef<HTMLInputElement | null>(null);
+  const focusTitle = useCallback(() => {
+    const input = titleRef.current;
+    if (input) {
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(0, 0);
+      input.scrollLeft = 0;
+    }
+    return false;
+  }, []);
+
   return (
     <Dialog open={state.open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
-      <DialogContent aria-describedby={undefined} className="rounded-md p-4">
+      <DialogContent initialFocus={state.mode === 'edit' ? focusTitle : undefined} aria-describedby={undefined} className="rounded-md p-4">
         <DialogHeader>
           <DialogTitle>{state.mode === 'create' ? '新建文件夹' : '重命名文件夹'}</DialogTitle>
         </DialogHeader>
         <div className="mt-4 space-y-3">
           <Input
-            autoFocus
+            ref={titleRef}
+            autoFocus={state.mode === 'create'}
             value={state.title}
-            onFocus={(event) => {
-              if (state.mode !== 'edit') return;
-
-              const input = event.currentTarget;
-              input.setSelectionRange(0, input.value.length, 'backward');
-              input.scrollLeft = 0;
-            }}
             onChange={(event) => onTitleChange(event.target.value)}
             placeholder="文件夹名称"
           />

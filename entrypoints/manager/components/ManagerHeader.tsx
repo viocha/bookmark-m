@@ -1,8 +1,9 @@
 import { RefreshCw, Search, X } from 'lucide-react';
-import type { RefObject } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
+import { cn } from '@/lib/utils';
 
 type ManagerHeaderProps = {
   pageTitle: string;
@@ -13,7 +14,7 @@ type ManagerHeaderProps = {
   onSearchChange: (value: string) => void;
   onCloseSearch: () => void;
   onOpenSearch: () => void;
-  onReload: () => void;
+  onReload: () => Promise<void>;
   selectionToolbar?: React.ReactNode;
   toolsMenu?: React.ReactNode;
 };
@@ -31,6 +32,20 @@ export function ManagerHeader({
   selectionToolbar,
   toolsMenu,
 }: ManagerHeaderProps) {
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshPendingRef = useRef(false);
+  const refresh = async () => {
+    if (refreshPendingRef.current) return;
+    refreshPendingRef.current = true;
+    setRefreshing(true);
+    try {
+      await onReload();
+    } finally {
+      refreshPendingRef.current = false;
+      setRefreshing(false);
+    }
+  };
+
   return (
     <header className="relative z-30 shrink-0 overflow-visible border-b border-border/70 bg-background/92 backdrop-blur">
       <div className="px-3 py-2">
@@ -68,8 +83,8 @@ export function ManagerHeader({
             </Button>
           ) : null}
 
-          <Button variant="outline" size="icon" className="size-8 rounded-full" onClick={onReload}>
-            <RefreshCw className="size-4" />
+          <Button variant="outline" size="icon" className="size-8 rounded-full" onClick={refresh} disabled={refreshing} aria-label="刷新" aria-busy={refreshing}>
+            <RefreshCw className={cn('size-4', refreshing && 'animate-spin')} />
           </Button>
 
           {toolsMenu}

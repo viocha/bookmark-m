@@ -144,7 +144,6 @@ export default function App() {
   });
 
   const move = useMove({
-    breadcrumbs: state.breadcrumbs,
     currentFolderId: state.currentFolderId,
     folderTree: state.folderTree,
     expandedMoveFolderIds: state.expandedMoveFolderIds,
@@ -902,11 +901,6 @@ export default function App() {
   }, [state.searchOpen, state.searchInputRef]);
 
   useEffect(() => {
-    if (!state.moveState.open || state.folderTree.length === 0) return;
-    state.setExpandedMoveFolderIds((prev) => Array.from(new Set([...prev, ...state.folderTree.map((node) => node.id)])));
-  }, [state.folderTree, state.moveState.open, state.setExpandedMoveFolderIds]);
-
-  useEffect(() => {
     if (!state.highlightedNodeId) return;
 
     const timer = window.setTimeout(() => {
@@ -1042,7 +1036,7 @@ export default function App() {
           state.setSearchOpen(false);
         }}
         onOpenSearch={() => state.setSearchOpen(true)}
-        onReload={() => void navigation.reload(state.currentFolderId)}
+        onReload={() => navigation.reload(state.currentFolderId)}
         onOpenSelected={() => void openNodeUrls(state.selectedIds)}
         onMoveSelected={() => state.selectedIds.length > 0 && move.openMoveDialog(state.selectedIds)}
         onDeleteSelected={() => state.selectedIds.length > 0 && void askDelete(state.selectedIds)}
@@ -1136,6 +1130,7 @@ export default function App() {
         onBookmarkComposerOpenChangeComplete={editor.onBookmarkComposerOpenChangeComplete}
         onBookmarkComposerPickParent={() => {
           editor.closeBookmarkComposer(() => {
+            move.resetMoveFolderExpansion(state.bookmarkComposer.parentId);
             state.setMoveState({
               open: true,
               mode: 'pick-bookmark-parent',

@@ -6,7 +6,6 @@ import type { BookmarkComposerState, MoveState } from '../types';
 import { filterFolderTree } from '../utils';
 
 type UseMoveParams = {
-  breadcrumbs: chrome.bookmarks.BookmarkTreeNode[];
   currentFolderId: string;
   folderTree: FolderTreeNode[];
   expandedMoveFolderIds: string[];
@@ -22,7 +21,6 @@ type UseMoveParams = {
 };
 
 export function useMove({
-  breadcrumbs,
   currentFolderId,
   folderTree,
   expandedMoveFolderIds,
@@ -36,6 +34,17 @@ export function useMove({
   resetSelection,
   reload,
 }: UseMoveParams) {
+  const resetMoveFolderExpansion = useCallback((targetFolderId: string) => {
+    const findAncestors = (nodes: FolderTreeNode[], ancestors: string[]): string[] | undefined => {
+      for (const node of nodes) {
+        if (node.id === targetFolderId) return ancestors;
+        const found = findAncestors(node.children, [...ancestors, node.id]);
+        if (found) return found;
+      }
+    };
+    setExpandedMoveFolderIds(findAncestors(folderTree, []) ?? []);
+  }, [folderTree, setExpandedMoveFolderIds]);
+
   const openMoveDialog = useCallback((ids: string[]) => {
     const folderIds = new Set<string>();
     const collectFolderIds = (nodes: FolderTreeNode[]) => {
@@ -46,7 +55,7 @@ export function useMove({
     };
     collectFolderIds(folderTree);
     setActionTarget(null);
-    setExpandedMoveFolderIds((prev) => Array.from(new Set([...prev, ...breadcrumbs.map((node) => node.id), ...folderTree.map((node) => node.id)])));
+    resetMoveFolderExpansion(currentFolderId);
     setMoveState({
       open: true,
       mode: 'move',
@@ -57,7 +66,7 @@ export function useMove({
         ? insertSettingsState.folderPosition
         : insertSettingsState.bookmarkPosition,
     });
-  }, [breadcrumbs, currentFolderId, folderTree, insertSettingsState, setActionTarget, setExpandedMoveFolderIds, setMoveState]);
+  }, [currentFolderId, folderTree, insertSettingsState, resetMoveFolderExpansion, setActionTarget, setMoveState]);
 
   const submitMove = useCallback(async () => {
     if (moveState.mode === 'pick-bookmark-parent') {
@@ -96,6 +105,7 @@ export function useMove({
 
   return {
     openMoveDialog,
+    resetMoveFolderExpansion,
     submitMove,
     filteredFolderTree,
     moveTreeExpandedIds,
