@@ -498,9 +498,9 @@ export async function normalizeFolderChildren(parentId: string): Promise<boolean
   let current = [...children];
   let changed = false;
 
-  for (let index = 0; index < sorted.length; index += 1) {
-    if (sorted[index].id !== current[index]?.id) {
-      await bookmarksMove(sorted[index].id, { parentId, index });
+  for (const [index, node] of sorted.entries()) {
+    if (node.id !== current[index]?.id) {
+      await bookmarksMove(node.id, { parentId, index });
       current = await bookmarksGetChildren(parentId);
       changed = true;
     }

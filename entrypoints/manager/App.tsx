@@ -346,7 +346,7 @@ export default function App() {
     state.setActionTarget(null);
     const snapshots = await captureDeletedNodes(deletableIds);
     const deletedLabel =
-      snapshots.length === 1 ? getDisplayTitle(snapshots[0].node) : `已删除 ${snapshots.length} 个项目`;
+      snapshots.length === 1 ? getDisplayTitle(snapshots[0]!.node) : `已删除 ${snapshots.length} 个项目`;
     await deleteNodes(deletableIds);
     state.setSearchResults((nodes) => nodes.filter((node) => !deletableIds.includes(node.id)));
     if (state.launchBookmark && deletableIds.includes(state.launchBookmark.id)) {

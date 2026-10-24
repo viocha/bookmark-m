@@ -280,7 +280,7 @@ export function ManagerContent({
     const viewport = scrollAreaRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
     if (!sentinel || !viewport) return;
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
+      if (entry?.isIntersecting) {
         setSearchPage((current) => ({
           query: deferredSearch,
           limit: (current.query === deferredSearch ? current.limit : 60) + 60,
