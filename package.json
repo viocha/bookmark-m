@@ -11,7 +11,7 @@
     "build:zip": "bun run typecheck && wxt zip",
     "typecheck": "bun check",
     "postinstall": "wxt prepare",
-    "reload": "reload-extension \"Bookmark M\"",
+    "reload": "reload-extension \"Bookmark M\" --browser chrome",
     "build:reload": "bun run build && bun run reload"
   },
   "dependencies": {
@@ -42,6 +42,6 @@
     "wxt": "^0.21.4",
     "vite": "^8.3.5",
     "web-ext": "^10.8.0",
-    "reload-extension": "^0.3.6"
+    "reload-extension": "^0.3.7"
   }
 }
