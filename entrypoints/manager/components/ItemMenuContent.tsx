@@ -64,6 +64,12 @@ export function ItemMenuContent({
   if (node.url) {
     return (
       <>
+        {deferredSearch && node.parentId ? (
+          <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
+            <ChevronRight className={menuIconClass} />
+            显示位置
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem
           onClick={() => {
             onClose();
@@ -104,12 +110,6 @@ export function ItemMenuContent({
           <ArrowDownToLine className={menuIconClass} />
           移动到底部
         </DropdownMenuItem>
-        {deferredSearch && node.parentId ? (
-          <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
-            <ChevronRight className={menuIconClass} />
-            显示位置
-          </DropdownMenuItem>
-        ) : null}
         <DropdownMenuItem
           onClick={() => {
             onClose();
@@ -140,6 +140,12 @@ export function ItemMenuContent({
 
   return (
     <>
+      {deferredSearch && node.parentId ? (
+        <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
+          <ChevronRight className={menuIconClass} />
+          显示位置
+        </DropdownMenuItem>
+      ) : null}
       {!protectedNode ? (
         <DropdownMenuItem
           onClick={() => {
@@ -174,12 +180,6 @@ export function ItemMenuContent({
         <Play className={menuIconClass} />
         打开全部
       </DropdownMenuItem>
-      {deferredSearch && node.parentId ? (
-        <DropdownMenuItem onClick={() => onShowLocation(node)} className={menuButtonClass}>
-          <ChevronRight className={menuIconClass} />
-          显示位置
-        </DropdownMenuItem>
-      ) : null}
       {displayMode === 'tree' ? (
         <>
           <DropdownMenuItem
