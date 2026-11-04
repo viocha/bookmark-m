@@ -30,7 +30,7 @@ export function FolderComposerDialog({
     const input = titleRef.current;
     if (input) {
       input.focus({ preventScroll: true });
-      input.setSelectionRange(0, 0);
+      input.setSelectionRange(0, input.value.length, 'backward');
       input.scrollLeft = 0;
     }
     return false;
