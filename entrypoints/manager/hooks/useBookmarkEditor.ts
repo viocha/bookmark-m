@@ -7,6 +7,7 @@ import {
   getDisplayTitle,
   getFolderPath,
   getInitialFolderId,
+  getLatestLaunchContext,
   getRecentFolders,
   moveNodes,
   normalizeUrl,
@@ -148,12 +149,13 @@ export function useBookmarkEditor({
   }, [insertSettingsState.bookmarkPosition, setActionTarget, setBookmarkComposer, setRecentFolders]);
 
   const saveLaunchTab = useCallback(async (preferredFolderId?: string, useRecentLocation = false) => {
-    if (!launchContext?.url || !launchContext.title) return;
+    if (!launchContext?.url) return;
+    const currentContext = await getLatestLaunchContext(launchContext);
     const recentFolderId = useRecentLocation ? (await getRecentFolders())[0]?.id : undefined;
     const targetFolderId = preferredFolderId
       ?? recentFolderId
       ?? (useRecentLocation || currentFolderId === HOME_FOLDER_ID ? await getInitialFolderId() : currentFolderId);
-    const existing = await chrome.bookmarks.search({ url: launchContext.url });
+    const existing = await chrome.bookmarks.search({ url: currentContext.url });
     const existingBookmark = existing.find((node) => !!node.url);
 
     if (existingBookmark) {
@@ -163,8 +165,8 @@ export function useBookmarkEditor({
     }
 
     openBookmarkComposer('create', targetFolderId, undefined, {
-      title: launchContext.title,
-      url: launchContext.url,
+      title: currentContext.title,
+      url: currentContext.url,
     });
   }, [currentFolderId, launchContext, openBookmarkComposer, setLaunchBookmark]);
 

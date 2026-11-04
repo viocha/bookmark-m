@@ -1,5 +1,6 @@
 import {
   getLaunchContext,
+  getLatestLaunchContext,
   getManagerUrl,
   type LaunchContext,
   setLaunchContext,
@@ -14,15 +15,18 @@ async function focusTab(tab: chrome.tabs.Tab) {
   }
 }
 
-async function syncLaunchContext(sourceTab?: chrome.tabs.Tab) {
-  if (!sourceTab?.url || !sourceTab.title) return null;
+async function syncLaunchContext(sourceTab?: chrome.tabs.Tab, onlyIfCurrent = false) {
+  if (!sourceTab?.url) return null;
+  const current = await getLaunchContext();
+  if (onlyIfCurrent && current?.tabId !== sourceTab.id) return current;
 
-  const context: LaunchContext = {
+  const context = await getLatestLaunchContext({
     tabId: sourceTab.id,
-    title: sourceTab.title,
+    title: sourceTab.title || sourceTab.url,
     url: sourceTab.url,
     ts: Date.now(),
-  };
+  });
+  if (current && current.tabId === context.tabId && current.title === context.title && current.url === context.url) return current;
 
   await setLaunchContext(context);
   await chrome.runtime.sendMessage({ type: 'launch-context-updated', payload: context }).catch(() => undefined);
@@ -30,8 +34,21 @@ async function syncLaunchContext(sourceTab?: chrome.tabs.Tab) {
 }
 
 export default defineBackground(() => {
+  // 串行同步来源页面，避免标题更新与切换来源标签页相互覆盖。
+  let contextUpdates: Promise<LaunchContext | null> = Promise.resolve(null);
+  const updateContext = (tab: chrome.tabs.Tab, onlyIfCurrent = false) => {
+    const update = contextUpdates.then(() => syncLaunchContext(tab, onlyIfCurrent));
+    contextUpdates = update.catch(() => null);
+    return update;
+  };
+
+  chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
+    if (changeInfo.title === undefined && changeInfo.url === undefined) return;
+    return updateContext(tab, true);
+  });
+
   chrome.action.onClicked.addListener(async (tab) => {
-    await syncLaunchContext(tab);
+    await updateContext(tab);
 
     const managerUrl = getManagerUrl();
     const [existing] = await chrome.tabs.query({ url: managerUrl });

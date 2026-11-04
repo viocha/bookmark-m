@@ -702,6 +702,13 @@ export async function getLaunchContext() {
   return (stored[LAUNCH_CONTEXT_KEY] as LaunchContext | undefined) ?? null;
 }
 
+export async function getLatestLaunchContext(context: LaunchContext): Promise<LaunchContext> {
+  if (typeof context.tabId !== 'number') return context;
+  const tab = await chrome.tabs.get(context.tabId).catch(() => null);
+  if (!tab?.url) return context;
+  return { ...context, title: tab.title || tab.url, url: tab.url };
+}
+
 export async function setLaunchContext(context: LaunchContext | null) {
   if (!context) {
     await storageRemove('session', LAUNCH_CONTEXT_KEY);
